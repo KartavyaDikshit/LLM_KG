@@ -1,0 +1,7 @@
+# Git Ignore
+__pycache__/
+*.pyc
+.env
+data/ontology/
+data/processed/
+.DS_Store
