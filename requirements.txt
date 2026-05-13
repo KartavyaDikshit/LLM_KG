@@ -1,0 +1,10 @@
+langchain
+langchain-google-genai
+langgraph
+pandas
+networkx
+pyvis
+requests
+python-dotenv
+pydantic
+tqdm
