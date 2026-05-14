@@ -1,4 +1,4 @@
-# 🚀 Google Colab: Complete "No-API" Medical KG Pipeline
+# 🚀 Google Colab: Complete "No-API" Medical KG Pipeline (FIXED)
 
 This guide contains all the code cells you need to run the Personalized Medicine Knowledge Graph project in Google Colab using only **FREE, Open-Source models** (no API keys required).
 
@@ -10,36 +10,47 @@ This guide contains all the code cells you need to run the Personalized Medicine
 ---
 
 ### 1️⃣ Step 1: Environment Setup
-*Copy this into the first cell and run it.*
+*Copy this into the first cell and run it. This installs the system dependencies and the Ollama engine.*
 
 ```python
-# 1. Clone the repository
-!git clone https://github.com/malavika6195/LLM_KG.git
-%cd LLM_KG
+# 1. Cleanup old clones to avoid nested folders
+import os
+import shutil
+if os.path.exists('/content/LLM_KG'):
+    shutil.rmtree('/content/LLM_KG')
 
-# 2. Install dependencies
+# 2. Clone the repository
+!git clone https://github.com/malavika6195/LLM_KG.git
+%cd /content/LLM_KG
+
+# 3. Install Python dependencies
 !pip install -r requirements.txt --quiet
 !pip install langchain-community pyvis tabulate --quiet
 
-# 3. Setup Ollama (Local LLM Engine)
+# 4. CRITICAL: Install zstd and Ollama
+!sudo apt-get update && sudo apt-get install -y zstd
 !curl -fsSL https://ollama.com/install.sh | sh
 
-# 4. Start Ollama background service
+# 5. Verify and Start Ollama background service
 import subprocess
 import time
-import os
 import sys
 sys.path.append('/content/LLM_KG')
 
-subprocess.Popen(["ollama", "serve"])
-time.sleep(10) # Wait for service to start
-print("✅ Environment Ready!")
+ollama_path = shutil.which("ollama")
+if ollama_path:
+    print(f"✅ Ollama installed successfully at: {ollama_path}")
+    subprocess.Popen([ollama_path, "serve"])
+    time.sleep(15) # Wait for service to initialize
+    print("✅ Environment Ready!")
+else:
+    print("❌ Ollama installation failed. Please check the output above for errors.")
 ```
 
 ---
 
 ### 2️⃣ Step 2: Download Models & Medical Data
-*This cell pulls the Top 5 free models and the ClinVec ontology files (~450MB).*
+*This cell pulls the Top 5 free models and the ClinVec ontology files (~450MB). This may take 5-10 minutes.*
 
 ```python
 # Pull the Top 5 free medical-capable models
@@ -105,9 +116,9 @@ print(tabulate(comparison_results, headers="keys", tablefmt="grid"))
 from src.graph.visualizer import visualize_graph
 from IPython.display import HTML, display
 
-for model_name in ["llama3", "mistral", "gemma2", "phi3:medium", "biomistral"]:
+for model_name in ["llama3", "mistral", "gemma2", "phi3_medium", "biomistral"]:
     builder = GraphBuilder()
-    llm = get_llm("ollama", model_name)
+    llm = get_llm("ollama", model_name.replace('_', ':'))
     workflow = create_agentic_workflow()
     
     # Generate KG for the first note
