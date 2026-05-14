@@ -61,8 +61,14 @@ def get_llm(model_type="gemini", model_name=None):
 
 def planner_node(state: AgentState, config=None):
     """Analyze the clinical note and determine the extraction focus."""
-    # Retrieve LLM from config if provided, else default
-    llm_instance = config.get("configurable", {}).get("llm", get_llm()) if config else get_llm()
+    # Retrieve LLM from config if provided
+    llm_instance = None
+    if config:
+        llm_instance = config.get("configurable", {}).get("llm")
+    
+    # If no LLM in config, get the default
+    if not llm_instance:
+        llm_instance = get_llm()
     
     prompt = ChatPromptTemplate.from_template(
         "You are an expert medical knowledge engineer. Analyze the following clinical note.\n"
@@ -83,7 +89,12 @@ def planner_node(state: AgentState, config=None):
 
 def extractor_node(state: AgentState, config=None):
     """Extract triples from clinical text using the planner's strategy."""
-    llm_instance = config.get("configurable", {}).get("llm", get_llm()) if config else get_llm()
+    llm_instance = None
+    if config:
+        llm_instance = config.get("configurable", {}).get("llm")
+    if not llm_instance:
+        llm_instance = get_llm()
+        
     structured_llm = llm_instance.with_structured_output(ExtractionOutput)
     
     prompt = ChatPromptTemplate.from_template(
@@ -112,7 +123,11 @@ def validator_node(state: AgentState, config=None):
     if os.getenv("MOCK_MODE", "false").lower() == "true":
         return {"is_valid": True, "validation_feedback": None}
         
-    llm_instance = config.get("configurable", {}).get("llm", get_llm()) if config else get_llm()
+    llm_instance = None
+    if config:
+        llm_instance = config.get("configurable", {}).get("llm")
+    if not llm_instance:
+        llm_instance = get_llm()
     
     triples_text = "\n".join([f"{t.subject} - {t.predicate} -> {t.obj}" for t in state["extracted_triples"]])
     

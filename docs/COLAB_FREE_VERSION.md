@@ -10,7 +10,7 @@ This guide contains all the code cells you need to run the Personalized Medicine
 ---
 
 ### 1️⃣ Step 1: Environment Setup
-*Copy this into the first cell and run it. This installs the system dependencies and the Ollama engine.*
+*Copy this into the first cell and run it.*
 
 ```python
 # 1. Cleanup old clones to avoid nested folders
@@ -41,10 +41,10 @@ ollama_path = shutil.which("ollama")
 if ollama_path:
     print(f"✅ Ollama installed successfully at: {ollama_path}")
     subprocess.Popen([ollama_path, "serve"])
-    time.sleep(15) # Wait for service to initialize
+    time.sleep(20) # Wait for service to initialize
     print("✅ Environment Ready!")
 else:
-    print("❌ Ollama installation failed. Please check the output above for errors.")
+    print("❌ Ollama installation failed.")
 ```
 
 ---
@@ -53,8 +53,12 @@ else:
 *This cell pulls the Top 5 free models and the ClinVec ontology files (~450MB). This may take 5-10 minutes.*
 
 ```python
+# Fix directory context
+%cd /content/LLM_KG
+
 # Pull the Top 5 free medical-capable models
-models = ["llama3", "mistral", "gemma2", "phi3:medium", "biomistral"]
+# Note: biomistral needs the :7b tag
+models = ["llama3", "mistral", "gemma2", "phi3:medium", "biomistral:7b"]
 
 for model in models:
     print(f"📥 Downloading {model}...")
@@ -76,27 +80,37 @@ from src.agents.nodes import get_llm
 from src.graph.builder import GraphBuilder
 from src.ingestion.loader import load_clinical_notes
 from tabulate import tabulate
+import os
+
+# Fix directory context
+%cd /content/LLM_KG
 
 # Load sample notes
 notes = load_clinical_notes("data/raw/notes_sample.csv")[:3]
 comparison_results = []
 
+# List of models to benchmark
+local_models = ["llama3", "mistral", "gemma2", "phi3:medium", "biomistral:7b"]
+
 print("🚀 Starting Benchmark...")
-for model_name in ["llama3", "mistral", "gemma2", "phi3:medium", "biomistral"]:
+for model_name in local_models:
     print(f"  > Processing with {model_name}...")
     workflow = create_agentic_workflow()
+    
+    # Force use of Ollama (Local)
     llm = get_llm("ollama", model_name)
     
     total_triples = 0
     for note in notes:
         state = {"clinical_note": note, "is_valid": False, "iterations": 0}
+        # Run the agentic loop
         final_state = workflow.invoke(state, config={"configurable": {"llm": llm}})
         total_triples += len(final_state["extracted_triples"])
     
     comparison_results.append({
         "Model": model_name,
         "Total Triples": total_triples,
-        "Avg Per Note": total_triples / len(notes),
+        "Avg Per Note": round(total_triples / len(notes), 2),
         "API Cost": "FREE"
     })
 
@@ -116,9 +130,12 @@ print(tabulate(comparison_results, headers="keys", tablefmt="grid"))
 from src.graph.visualizer import visualize_graph
 from IPython.display import HTML, display
 
-for model_name in ["llama3", "mistral", "gemma2", "phi3_medium", "biomistral"]:
+for model_name in ["llama3", "mistral", "gemma2", "phi3_medium", "biomistral_7b"]:
     builder = GraphBuilder()
-    llm = get_llm("ollama", model_name.replace('_', ':'))
+    
+    # Map back to Ollama name
+    ollama_name = model_name.replace('_', ':')
+    llm = get_llm("ollama", ollama_name)
     workflow = create_agentic_workflow()
     
     # Generate KG for the first note
@@ -126,8 +143,7 @@ for model_name in ["llama3", "mistral", "gemma2", "phi3_medium", "biomistral"]:
     builder.add_triples(state["extracted_triples"])
     
     # Save visualization
-    safe_name = model_name.replace(':', '_')
-    output_path = f"data/processed/kg_{safe_name}.html"
+    output_path = f"data/processed/kg_{model_name}.html"
     visualize_graph(builder.graph, output_path=output_path)
     
     print(f"\n🔍 Interactive KG: {model_name}")
