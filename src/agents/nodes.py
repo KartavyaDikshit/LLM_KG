@@ -8,6 +8,9 @@ from src.agents.state import AgentState, Triple, BaseModel, Field
 from pydantic import ValidationError
 from langchain_core.runnables import Runnable
 
+class ExtractionOutput(BaseModel):
+    triples: List[Triple] = Field(description="List of medical triples extracted from text")
+
 # Mock LLM for local testing without API key
 class MockLLM(Runnable):
     def invoke(self, input, config=None):
