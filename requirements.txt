@@ -1,5 +1,7 @@
 langchain
 langchain-google-genai
+langchain-groq
+langchain-community
 langgraph
 pandas
 networkx
@@ -8,3 +10,4 @@ requests
 python-dotenv
 pydantic
 tqdm
+tabulate

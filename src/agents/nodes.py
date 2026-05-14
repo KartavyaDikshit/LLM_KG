@@ -1,10 +1,11 @@
 import os
 from typing import List
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
+from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from src.agents.state import AgentState, Triple, BaseModel, Field
 from pydantic import ValidationError
-
 from langchain_core.runnables import Runnable
 
 # Mock LLM for local testing without API key
@@ -41,28 +42,38 @@ class MockStructuredLLM(Runnable):
             
         return type('obj', (object,), {'triples': triples})
 
-# Determine if we should use Mock Mode
-USE_MOCK = os.getenv("MOCK_MODE", "false").lower() == "true" or not os.getenv("GEMINI_API_KEY")
+def get_llm(model_type="gemini", model_name=None):
+    """Factory to get the requested LLM. Supports Gemini, Groq, and Ollama."""
+    if os.getenv("MOCK_MODE", "false").lower() == "true":
+        return MockLLM()
+    
+    if model_type == "gemini":
+        name = model_name or "gemini-1.5-flash"
+        return ChatGoogleGenerativeAI(model=name, temperature=0)
+    elif model_type == "groq":
+        name = model_name or "llama-3.1-70b-versatile"
+        return ChatGroq(model=name, temperature=0)
+    elif model_type == "ollama":
+        name = model_name or "llama3"
+        return ChatOllama(model=name, temperature=0)
+    else:
+        return MockLLM()
 
-if USE_MOCK:
-    print("!!! RUNNING IN MOCK MODE (No API Key required) !!!")
-    llm = MockLLM()
-else:
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
-
-class ExtractionOutput(BaseModel):
-    triples: List[Triple] = Field(description="List of medical triples extracted from text")
-
-def planner_node(state: AgentState):
+def planner_node(state: AgentState, config=None):
     """Analyze the clinical note and determine the extraction focus."""
+    # Retrieve LLM from config if provided, else default
+    llm_instance = config.get("configurable", {}).get("llm", get_llm()) if config else get_llm()
+    
     prompt = ChatPromptTemplate.from_template(
-        "You are a medical knowledge graph planner. Analyze the following clinical note and "
-        "determine the key entities (diseases, drugs, procedures) and the relationships "
-        "that should be extracted to align with a medical ontology. \n\n"
+        "You are an expert medical knowledge engineer. Analyze the following clinical note.\n"
+        "1. Identify ALL medications, dosages, and routes.\n"
+        "2. Identify ALL diagnoses, symptoms, and chronic conditions.\n"
+        "3. Identify ALL procedures and lab tests mentioned.\n"
+        "4. Map the relationships between them (e.g., Drug TREATS Disease, Test DIAGNOSES Condition).\n\n"
         "Note: {note}\n\n"
-        "Provide a concise extraction strategy."
+        "Provide a detailed, structured extraction strategy to ensure maximum density of the resulting graph."
     )
-    chain = prompt | llm
+    chain = prompt | llm_instance
     strategy = chain.invoke({"note": state["clinical_note"]})
     
     return {
@@ -70,17 +81,21 @@ def planner_node(state: AgentState):
         "iterations": state.get("iterations", 0) + 1
     }
 
-def extractor_node(state: AgentState):
+def extractor_node(state: AgentState, config=None):
     """Extract triples from clinical text using the planner's strategy."""
-    structured_llm = llm.with_structured_output(ExtractionOutput)
+    llm_instance = config.get("configurable", {}).get("llm", get_llm()) if config else get_llm()
+    structured_llm = llm_instance.with_structured_output(ExtractionOutput)
     
     prompt = ChatPromptTemplate.from_template(
-        "You are a clinical information extractor. Use the provided strategy to pull "
-        "Subject-Predicate-Object triples from the clinical note. \n\n"
+        "You are a clinical NLP extractor. Your goal is to extract a HIGH DENSITY medical knowledge graph.\n"
+        "Use the strategy provided to pull EVERY possible Subject-Predicate-Object triple.\n\n"
         "Strategy: {strategy}\n"
         "Note: {note}\n\n"
-        "If this is a re-extraction, address the feedback: {feedback}\n\n"
-        "Format the output as a list of triples."
+        "Guidelines:\n"
+        "- Be exhaustive. Do not miss any relationships mentioned.\n"
+        "- Use standard medical terminology for nodes.\n"
+        "- Predicates should be clear and consistent (e.g., HAS_SYMPTOM, PRESCRIBED_FOR, CONTRAINDICATED_WITH).\n\n"
+        "If this is a re-extraction, address this feedback: {feedback}\n"
     )
     
     feedback = state.get("validation_feedback", "None")
@@ -92,32 +107,27 @@ def extractor_node(state: AgentState):
     
     return {"extracted_triples": result.triples}
 
-def validator_node(state: AgentState):
+def validator_node(state: AgentState, config=None):
     """Validate the extracted triples against logical consistency and medical truth."""
-    if USE_MOCK:
-        return {
-            "is_valid": True,
-            "validation_feedback": None
-        }
+    if os.getenv("MOCK_MODE", "false").lower() == "true":
+        return {"is_valid": True, "validation_feedback": None}
         
-    # In a full implementation, this would query the ClinVec CSVs/DB.
-    # For the prototype, we use the LLM as a medical critic primed with ontology concepts.
+    llm_instance = config.get("configurable", {}).get("llm", get_llm()) if config else get_llm()
     
     triples_text = "\n".join([f"{t.subject} - {t.predicate} -> {t.obj}" for t in state["extracted_triples"]])
     
     prompt = ChatPromptTemplate.from_template(
-        "You are a medical ontology validator. Evaluate the following extracted triples "
-        "for clinical accuracy and logical consistency. \n\n"
+        "You are a medical ontology validator. Evaluate these extracted triples for accuracy.\n"
         "Triples:\n{triples}\n\n"
         "Original Note:\n{note}\n\n"
         "Check for:\n"
-        "1. Logical direction (e.g., Treatment -> Disease, not Disease -> Treatment)\n"
-        "2. Entity grounding (Are the entities real medical terms?)\n"
-        "3. Hallucinations (Is the relationship supported by the note?)\n\n"
-        "Provide 'PASSED' if all are valid, otherwise provide detailed feedback for correction."
+        "1. Accuracy: Does the note actually support this relationship?\n"
+        "2. Direction: Is the relationship direction correct?\n"
+        "3. Specificity: Are the terms medically precise?\n\n"
+        "If they are excellent, reply 'PASSED'. Otherwise, provide corrective instructions for the extractor."
     )
     
-    chain = prompt | llm
+    chain = prompt | llm_instance
     evaluation = chain.invoke({
         "triples": triples_text,
         "note": state["clinical_note"]

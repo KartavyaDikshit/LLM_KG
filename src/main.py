@@ -59,6 +59,15 @@ def main():
     # Step 5: Save and Visualize
     builder.save_graph()
     visualize_graph(builder.graph)
+    
+    # Step 6: Evaluation
+    from src.evaluation.metrics import evaluate_graph_quality, print_evaluation_report
+    from src.ingestion.loader import load_ontology
+    
+    nodes_df, _ = load_ontology()
+    stats = evaluate_graph_quality(builder.graph, nodes_df)
+    print_evaluation_report(stats)
+    
     print("Pipeline complete! View the results in data/processed/")
 
 if __name__ == "__main__":
