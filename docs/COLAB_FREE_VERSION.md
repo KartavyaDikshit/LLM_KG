@@ -1,4 +1,4 @@
-# 🚀 Google Colab: Complete "No-API" Medical KG Pipeline (FIXED)
+# 🚀 Google Colab: Complete "No-API" Medical KG Pipeline (ULTIMATE FIX)
 
 This guide contains all the code cells you need to run the Personalized Medicine Knowledge Graph project in Google Colab using only **FREE, Open-Source models** (no API keys required).
 
@@ -13,9 +13,10 @@ This guide contains all the code cells you need to run the Personalized Medicine
 *Copy this into the first cell and run it.*
 
 ```python
-# 1. Cleanup old clones to avoid nested folders
+# 1. Cleanup and Reset
 import os
 import shutil
+%cd /content
 if os.path.exists('/content/LLM_KG'):
     shutil.rmtree('/content/LLM_KG')
 
@@ -27,11 +28,11 @@ if os.path.exists('/content/LLM_KG'):
 !pip install -r requirements.txt --quiet
 !pip install langchain-community pyvis tabulate --quiet
 
-# 4. CRITICAL: Install zstd and Ollama
+# 4. Install zstd and Ollama
 !sudo apt-get update && sudo apt-get install -y zstd
 !curl -fsSL https://ollama.com/install.sh | sh
 
-# 5. Verify and Start Ollama background service
+# 5. Start Ollama background service
 import subprocess
 import time
 import sys
@@ -50,14 +51,13 @@ else:
 ---
 
 ### 2️⃣ Step 2: Download Models & Medical Data
-*This cell pulls the Top 5 free models and the ClinVec ontology files (~450MB). This may take 5-10 minutes.*
+*This cell pulls the Top 5 free models and the ClinVec ontology files (~450MB).*
 
 ```python
-# Fix directory context
+# Ensure correct directory
 %cd /content/LLM_KG
 
 # Pull the Top 5 free medical-capable models
-# Note: biomistral needs the :7b tag
 models = ["llama3", "mistral", "gemma2", "phi3:medium", "biomistral:7b"]
 
 for model in models:
@@ -72,21 +72,22 @@ print("✅ Models and Data Downloaded!")
 ---
 
 ### 3️⃣ Step 3: Run Multi-Model Comparison
-*Run this to compare how each model performs at building a Knowledge Graph.*
+*This cell is now robust to path errors.*
 
 ```python
+# Force directory context
+import os
+%cd /content/LLM_KG
+
 from src.agents.graph import create_agentic_workflow
 from src.agents.nodes import get_llm
 from src.graph.builder import GraphBuilder
 from src.ingestion.loader import load_clinical_notes
 from tabulate import tabulate
-import os
-
-# Fix directory context
-%cd /content/LLM_KG
 
 # Load sample notes
-notes = load_clinical_notes("data/raw/notes_sample.csv")[:3]
+notes_path = "data/raw/notes_sample.csv"
+notes = load_clinical_notes(notes_path)[:3]
 comparison_results = []
 
 # List of models to benchmark
@@ -96,14 +97,11 @@ print("🚀 Starting Benchmark...")
 for model_name in local_models:
     print(f"  > Processing with {model_name}...")
     workflow = create_agentic_workflow()
-    
-    # Force use of Ollama (Local)
     llm = get_llm("ollama", model_name)
     
     total_triples = 0
     for note in notes:
         state = {"clinical_note": note, "is_valid": False, "iterations": 0}
-        # Run the agentic loop
         final_state = workflow.invoke(state, config={"configurable": {"llm": llm}})
         total_triples += len(final_state["extracted_triples"])
     
@@ -114,7 +112,6 @@ for model_name in local_models:
         "API Cost": "FREE"
     })
 
-# Output the final table
 print("\n" + "="*50)
 print("RESEARCH RESULTS: NO-API MODEL COMPARISON")
 print("="*50)
@@ -124,16 +121,15 @@ print(tabulate(comparison_results, headers="keys", tablefmt="grid"))
 ---
 
 ### 4️⃣ Step 4: Visualise the Knowledge Graphs
-*Render interactive maps for every model to visually inspect the data.*
-
 ```python
+# Ensure correct directory
+%cd /content/LLM_KG
+
 from src.graph.visualizer import visualize_graph
 from IPython.display import HTML, display
 
 for model_name in ["llama3", "mistral", "gemma2", "phi3_medium", "biomistral_7b"]:
     builder = GraphBuilder()
-    
-    # Map back to Ollama name
     ollama_name = model_name.replace('_', ':')
     llm = get_llm("ollama", ollama_name)
     workflow = create_agentic_workflow()

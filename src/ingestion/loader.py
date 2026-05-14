@@ -5,16 +5,25 @@ def load_clinical_notes(file_path):
     """
     Load clinical notes from a CSV file.
     """
-    # Fallback check for datasets folder
-    if not os.path.exists(file_path):
-        alt_path = os.path.join("datasets", os.path.basename(file_path))
-        if os.path.exists(alt_path):
-            file_path = alt_path
-        else:
-            raise FileNotFoundError(f"Clinical notes file not found: {file_path}")
+    # Try multiple path variations for robustness
+    paths_to_try = [
+        file_path,
+        os.path.join(os.getcwd(), file_path),
+        os.path.join("/content/LLM_KG", file_path),
+        os.path.join("datasets", os.path.basename(file_path))
+    ]
     
-    print(f"Loading clinical notes from {file_path}...")
-    df = pd.read_csv(file_path)
+    found_path = None
+    for p in paths_to_try:
+        if os.path.exists(p):
+            found_path = p
+            break
+            
+    if not found_path:
+        raise FileNotFoundError(f"Clinical notes file not found after checking: {paths_to_try}")
+    
+    print(f"Loading clinical notes from {found_path}...")
+    df = pd.read_csv(found_path)
     
     # Identify the text column
     possible_text_cols = ['text', 'note', 'description', 'NEV_TEXT', 'CONTENT']
