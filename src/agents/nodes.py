@@ -90,6 +90,8 @@ def planner_node(state: AgentState, config=None):
         "iterations": state.get("iterations", 0) + 1
     }
 
+from langchain_core.output_parsers import JsonOutputParser
+
 def extractor_node(state: AgentState, config=None):
     """Extract triples from clinical text using the planner's strategy."""
     llm_instance = None
@@ -98,7 +100,9 @@ def extractor_node(state: AgentState, config=None):
     if not llm_instance:
         llm_instance = get_llm()
         
-    structured_llm = llm_instance.with_structured_output(ExtractionOutput)
+    # ChatOllama doesn't support with_structured_output natively in some versions
+    # We use a manual JSON parser and strict prompting instead
+    parser = JsonOutputParser(pydantic_object=ExtractionOutput)
     
     prompt = ChatPromptTemplate.from_template(
         "You are a clinical NLP extractor. Your goal is to extract a HIGH DENSITY medical knowledge graph.\n"
@@ -109,17 +113,30 @@ def extractor_node(state: AgentState, config=None):
         "- Be exhaustive. Do not miss any relationships mentioned.\n"
         "- Use standard medical terminology for nodes.\n"
         "- Predicates should be clear and consistent (e.g., HAS_SYMPTOM, PRESCRIBED_FOR, CONTRAINDICATED_WITH).\n\n"
+        "{format_instructions}\n"
         "If this is a re-extraction, address this feedback: {feedback}\n"
     )
     
+    chain = prompt | llm_instance | parser
+    
     feedback = state.get("validation_feedback", "None")
-    result = structured_llm.invoke({
+    result_dict = chain.invoke({
         "strategy": state["planner_strategy"],
         "note": state["clinical_note"],
-        "feedback": feedback
+        "feedback": feedback,
+        "format_instructions": parser.get_format_instructions()
     })
     
-    return {"extracted_triples": result.triples}
+    # Handle different output formats from different models
+    triples = []
+    if isinstance(result_dict, dict) and 'triples' in result_dict:
+        for t in result_dict['triples']:
+            try:
+                triples.append(Triple(**t))
+            except:
+                continue
+    
+    return {"extracted_triples": triples}
 
 def validator_node(state: AgentState, config=None):
     """Validate the extracted triples against logical consistency and medical truth."""
