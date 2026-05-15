@@ -4,65 +4,47 @@ import os
 
 def visualize_graph(nx_graph, output_path="data/processed/kg_visualization.html"):
     """
-    Visualize a NetworkX graph with categorical coloring and physics.
+    Visualize a NetworkX graph with categorical coloring and CDN-only assets for Colab.
     """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
-    # Improved visualization settings - FORCE CDN for Vis.js compatibility
-    net = Network(height="600px", width="100%", bgcolor="#ffffff", font_color="#333333", notebook=False, directed=True)
+    # Use a white background for better visibility in Colab
+    net = Network(height="550px", width="100%", bgcolor="#ffffff", font_color="#333333", notebook=False, directed=True)
     
-    # Use CDN links instead of local files
+    # Force CDN to avoid local file path issues in Colab
     net.set_edge_smooth('dynamic')
     
-    # Define color scheme for medical categories
     color_map = {
-        "drug": "#3b82f6",      # Blue
-        "medication": "#3b82f6",
-        "disease": "#ef4444",   # Red
-        "condition": "#ef4444",
-        "diagnosis": "#ef4444",
-        "symptom": "#f59e0b",   # Orange
-        "test": "#10b981",      # Green
-        "procedure": "#8b5cf6", # Purple
-        "patient": "#6b7280"    # Gray
+        "drug": "#3b82f6", "medication": "#3b82f6",
+        "disease": "#ef4444", "condition": "#ef4444",
+        "symptom": "#f59e0b", "test": "#10b981",
+        "procedure": "#8b5cf6", "patient": "#6b7280"
     }
     
-    # Add nodes with smart coloring
     for node in nx_graph.nodes():
-        node_lower = str(node).lower()
-        color = "#94a3b8" # Default Gray-blue
-        
+        node_label = str(node)
+        color = "#94a3b8"
         for key, val in color_map.items():
-            if key in node_lower:
+            if key in node_label.lower():
                 color = val
                 break
+        net.add_node(node, label=node_label, title=node_label, color=color, size=30)
         
-        net.add_node(node, label=str(node), title=str(node), color=color, size=25)
-        
-    # Add edges with labels
     for source, target, data in nx_graph.edges(data=True):
-        net.add_edge(source, target, label=data.get('label', ''), 
-                     title=f"Relation: {data.get('label', '')}",
-                     width=2, color="#cbd5e1", arrows="to")
+        label = data.get('label', '')
+        net.add_edge(source, target, label=label, title=label, width=2, color="#cbd5e1", arrows="to")
         
-    # Set sophisticated physics for better spread
+    # High-performance physics
     net.set_options("""
     var options = {
       "physics": {
-        "forceAtlas2Based": {
-          "gravitationalConstant": -50,
-          "centralGravity": 0.01,
-          "springLength": 100,
-          "springConstant": 0.08
-        },
-        "maxVelocity": 50,
-        "solver": "forceAtlas2Based",
-        "timestep": 0.35,
-        "stabilization": { "iterations": 150 }
+        "barnesHut": { "gravitationalConstant": -2000, "centralGravity": 0.3, "springLength": 95, "springConstant": 0.04 },
+        "minVelocity": 0.75
       }
     }
     """)
     
+    # Save with no local assets
     net.save_graph(output_path)
 
 if __name__ == "__main__":

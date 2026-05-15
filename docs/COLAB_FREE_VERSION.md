@@ -5,7 +5,7 @@ This is the **Final, Stabilized version** of the project code for Google Colab. 
 ### 📋 Prerequisites
 1. Open [Google Colab](https://colab.research.google.com/).
 2. Go to **Runtime > Change runtime type**.
-3. Select **T4 GPU**.
+3. Select **T4 GPU** (Required for speed).
 
 ---
 
@@ -128,7 +128,7 @@ print(tabulate(results, headers="keys", tablefmt="grid"))
 ---
 
 ### 4️⃣ Cell 4: Visual Research Dashboard (Architecture + Charts + Graphs)
-*This is the high-fidelity visual output cell.*
+*Run this cell to generate a complete visual report. This cell uses a specialized Base64 renderer to fix the 'blank box' issue.*
 
 ```python
 import matplotlib.pyplot as plt
@@ -138,40 +138,75 @@ from IPython.display import HTML, display, Image
 from src.graph.builder import GraphBuilder
 from src.graph.visualizer import visualize_graph
 import base64
+import os
 
-# 1. ARCHITECTURE DIAGRAM
-print("🏛️ 1. System Architecture")
+# --- 1. VISUAL ARCHITECTURE DIAGRAM ---
+print("🏛️ 1. System Architecture (Agentic GraphRAG)")
 dot = Digraph(comment='Architecture')
-dot.attr(rankdir='LR', size='10,5', bgcolor='#f8fafc')
-dot.node('A', 'MIMIC-IV Note', shape='note', fillcolor='#e2e8f0', style='filled')
-dot.node('B', 'Planner Agent', shape='ellipse', fillcolor='#bfdbfe', style='filled')
-dot.node('C', 'Extractor Agent', shape='ellipse', fillcolor='#bbf7d0', style='filled')
-dot.node('D', 'Knowledge Graph', shape='cylinder', fillcolor='#ddd6fe', style='filled')
-dot.edge('A', 'B'); dot.edge('B', 'C'); dot.edge('C', 'D')
-dot.render('arch', format='png')
-display(Image('arch.png'))
+dot.attr(rankdir='LR', size='12,6', bgcolor='#ffffff')
+dot.node('A', 'MIMIC-IV Note', shape='note', fillcolor='#f1f5f9', style='filled', fontname='Arial')
+dot.node('B', 'Planner Agent\n(Extraction Strategy)', shape='ellipse', fillcolor='#dbeafe', style='filled', fontname='Arial')
+dot.node('C', 'Extractor Agent\n(NER + RE)', shape='ellipse', fillcolor='#dcfce7', style='filled', fontname='Arial')
+dot.node('D', 'Validator Agent\n(Ontology Alignment)', shape='ellipse', fillcolor='#fee2e2', style='filled', fontname='Arial')
+dot.node('E', 'Knowledge Graph\n(NetworkX)', shape='cylinder', fillcolor='#f3e8ff', style='filled', fontname='Arial')
+dot.node('F', 'Interactive\nDashboard', shape='desktop', fillcolor='#fef9c3', style='filled', fontname='Arial')
 
-# 2. PERFORMANCE CHART
+dot.edge('A', 'B', color='#64748b'); dot.edge('B', 'C', color='#64748b'); dot.edge('C', 'D', color='#64748b')
+dot.edge('D', 'C', label='Feedback Loop', color='#ef4444', fontcolor='#ef4444')
+dot.edge('D', 'E', label='Verified Triples', color='#10b981', fontcolor='#10b981')
+dot.edge('E', 'F', color='#64748b')
+dot.render('full_arch', format='png')
+display(Image('full_arch.png'))
+
+# --- 2. PERFORMANCE COMPARISON CHART ---
 print("\n📊 2. Extraction Density Comparison")
-sns.set_style("whitegrid")
-plt.figure(figsize=(8, 4))
-sns.barplot(x=[r['Model'] for r in results], y=[r['Avg Triples'] for r in results], palette="viridis")
-plt.ylabel("Avg Triples per Note"); plt.show()
+if 'results' in locals() and results:
+    model_names = [r['Model'] for r in results]
+    avg_triples = [r['Avg Triples'] for r in results]
+    plt.figure(figsize=(10, 5))
+    sns.set_style("whitegrid")
+    colors = sns.color_palette("husl", len(model_names))
+    barplot = sns.barplot(x=model_names, y=avg_triples, palette=colors)
+    plt.title("Medical KG Extraction Density: Llama 3 vs Mistral vs Gemma 2", fontsize=15, pad=20)
+    plt.ylabel("Avg Triples per Clinical Note", fontsize=12)
+    plt.xlabel("LLM Model", fontsize=12)
+    for i in barplot.containers: barplot.bar_label(i, padding=3)
+    plt.tight_layout(); plt.show()
+else:
+    print("      ⚠️ Benchmarking data not found. Please run Step 3 first.")
 
-# 3. BULLETPROOF INTERACTIVE GRAPHS
+# --- 3. BULLETPROOF INTERACTIVE GRAPHS ---
 def render_colab_kg(path, title):
-    with open(path, 'r', encoding='utf-8') as f: html = f.read()
-    b64 = base64.b64encode(html.encode('utf-8')).decode('utf-8')
-    iframe = f'<h3>🔍 {title}</h3><iframe src="data:text/html;base64,{b64}" width="100%" height="500px" style="border:2px solid #e2e8f0; border-radius:10px;"></iframe>'
-    display(HTML(iframe))
+    """Bypasses Colab security to show Pyvis interactive maps perfectly."""
+    if not os.path.exists(path): return
+    with open(path, 'r', encoding='utf-8') as f: html_content = f.read()
+    
+    # Use base64 encoding to embed the entire HTML inside the source
+    # This bypasses all security/pathing issues in Colab
+    b64 = base64.b64encode(html_content.encode('utf-8')).decode('utf-8')
+    iframe_html = f'''
+        <div style="padding:20px; background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:40px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+            <h3 style="color:#0f172a; margin-top:0; font-family:sans-serif; border-bottom:2px solid #3b82f6; padding-bottom:8px; display:inline-block;">🔍 Clinical Graph: {title}</h3>
+            <p style="color:#64748b; font-family:sans-serif; margin-bottom:15px;">Nodes are color-coded (Blue: Drugs, Red: Diseases, Green: Tests)</p>
+            <iframe src="data:text/html;base64,{b64}" width="100%" height="600px" style="border:none; background:#ffffff;"></iframe>
+        </div>
+    '''
+    display(HTML(iframe_html))
 
-print("\n🌐 3. Interactive Clinical Knowledge Graphs")
-for m_name in ["llama3", "mistral", "gemma2"]:
+print("\n🌐 3. Interactive Medical Knowledge Graphs (Multi-Model View)")
+m_list = ["llama3", "mistral", "gemma2"]
+for m_name in m_list:
     builder = GraphBuilder()
+    llm = get_llm("ollama", m_name)
     workflow = create_agentic_workflow()
-    res = workflow.invoke({"clinical_note": notes[0], "is_valid": False, "iterations": 0}, config={"configurable": {"llm": get_llm("ollama", m_name)}})
-    for t in res["extracted_triples"]: builder.graph.add_edge(t.subject, t.obj, label=t.predicate)
-    path = f"data/processed/v_{m_name}.html"
+    
+    print(f"  > Processing and rendering for {m_name}...")
+    # Use the first clinical note as the visual base
+    state = workflow.invoke({"clinical_note": notes[0], "is_valid": False, "iterations": 0}, config={"configurable": {"llm": llm}})
+    for t in state.get("extracted_triples", []):
+        builder.graph.add_edge(t.subject, t.obj, label=t.predicate)
+    
+    path = f"data/processed/final_{m_name}.html"
     visualize_graph(builder.graph, output_path=path)
     render_colab_kg(path, m_name.upper())
 ```
