@@ -155,36 +155,58 @@ print("\n" + "="*40 + "\nFINAL RESEARCH RESULTS\n" + "="*40)
 print(tabulate(results, headers="keys", tablefmt="grid"))
 ---
 
-### 4️⃣ Step 4: Visualise Interactive Graphs
-*Generates and displays the Knowledge Graphs with categorical coloring (Drugs: Blue, Disease: Red).*
+### 5️⃣ Step 5: Visual Research Dashboard
+*Run this cell to generate a full visual report, including the Architecture Diagram, Performance Comparison, and Interactive Graphs.*
 
 ```python
-from src.graph.builder import GraphBuilder
-from src.graph.visualizer import visualize_graph
-from IPython.display import IFrame, display
+import matplotlib.pyplot as plt
+import seaborn as sns
+from graphviz import Digraph
+from IPython.display import HTML, display, Image
 
-# Force reload to pick up visualization improvements
-import importlib
-import src.graph.visualizer
-importlib.reload(src.graph.visualizer)
+# 1. VISUAL ARCHITECTURE DIAGRAM
+print("🏛️ Generating Architecture Diagram...")
+dot = Digraph(comment='Agentic GraphRAG Architecture')
+dot.attr(rankdir='LR', size='10,5', bgcolor='#f8fafc')
+dot.node('A', 'Clinical Note\n(MIMIC-IV)', shape='note', fillcolor='#e2e8f0', style='filled')
+dot.node('B', 'Planner Agent\n(Semantic Strategy)', shape='ellipse', fillcolor='#bfdbfe', style='filled')
+dot.node('C', 'Extractor Agent\n(NER & RE)', shape='ellipse', fillcolor='#bbf7d0', style='filled')
+dot.node('D', 'Validator Agent\n(Ontology Check)', shape='ellipse', fillcolor='#fecaca', style='filled')
+dot.node('E', 'NetworkX\nKnowledge Graph', shape='cylinder', fillcolor='#ddd6fe', style='filled')
+dot.node('F', 'Pyvis\nInteractive Map', shape='desktop', fillcolor='#fde68a', style='filled')
 
+dot.edge('A', 'B')
+dot.edge('B', 'C')
+dot.edge('C', 'D')
+dot.edge('D', 'C', label='Feedback Loop')
+dot.edge('D', 'E', label='Verified Triples')
+dot.edge('E', 'F')
+dot.render('architecture', format='png')
+display(Image('architecture.png'))
+
+# 2. PERFORMANCE COMPARISON CHART
+print("\n📊 Generating Performance Metrics...")
+model_names = [r['Model'] for r in results]
+avg_triples = [r['Avg Triples'] for r in results]
+
+plt.figure(figsize=(10, 6))
+sns.set_style("whitegrid")
+barplot = sns.barplot(x=model_names, y=avg_triples, palette="viridis")
+plt.title("Knowledge Graph Extraction Density (Avg Triples per Note)", fontsize=15)
+plt.ylabel("Number of Triples", fontsize=12)
+plt.xlabel("LLM Model", fontsize=12)
+for i in barplot.containers: barplot.bar_label(i)
+plt.show()
+
+# 3. FIXED INTERACTIVE RENDERING (Direct Embed)
+def show_graph(path):
+    with open(path, 'r', encoding='utf-8') as f:
+        html = f.read()
+    display(HTML(html))
+
+print("\n🌐 Interactive Knowledge Graphs (Embedded):")
 for m_name in ["llama3", "mistral", "gemma2"]:
-    print(f"\n🎨 Rendering High-Fidelity KG for: {m_name}...")
-    builder = GraphBuilder()
-    llm = get_llm("ollama", m_name)
-    workflow = create_agentic_workflow()
-
-    # Process the first note to generate the graph
-    state = workflow.invoke({"clinical_note": notes[0], "is_valid": False, "iterations": 0}, config={"configurable": {"llm": llm}})
-
-    # Add triples with labels for the edges
-    for t in state["extracted_triples"]:
-        builder.graph.add_edge(t.subject, t.obj, label=t.predicate)
-
-    # Save & Show using IFrame for best Colab compatibility
-    path = f"data/processed/kg_{m_name}.html"
-    visualize_graph(builder.graph, output_path=path)
-
-    display(IFrame(src=path, width='100%', height='600px'))
+    print(f"\nModel: {m_name}")
+    show_graph(f"data/processed/kg_{m_name}.html")
 ```
 
