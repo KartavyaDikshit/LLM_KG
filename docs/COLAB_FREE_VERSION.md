@@ -153,25 +153,38 @@ for m_name in ["llama3", "mistral", "gemma2"]:
 
 print("\n" + "="*40 + "\nFINAL RESEARCH RESULTS\n" + "="*40)
 print(tabulate(results, headers="keys", tablefmt="grid"))
-```
-
 ---
 
-### 4️⃣ Cell 4: Visualise Interactive Graphs
+### 4️⃣ Step 4: Visualise Interactive Graphs
+*Generates and displays the Knowledge Graphs with categorical coloring (Drugs: Blue, Disease: Red).*
+
 ```python
 from src.graph.builder import GraphBuilder
 from src.graph.visualizer import visualize_graph
-from IPython.display import HTML, display
+from IPython.display import IFrame, display
+
+# Force reload to pick up visualization improvements
+import importlib
+import src.graph.visualizer
+importlib.reload(src.graph.visualizer)
 
 for m_name in ["llama3", "mistral", "gemma2"]:
+    print(f"\n🎨 Rendering High-Fidelity KG for: {m_name}...")
     builder = GraphBuilder()
     llm = get_llm("ollama", m_name)
-    print(f"🎨 Generating Visualization for {m_name}...")
-    state = create_agentic_workflow().invoke({"clinical_note": notes[0], "is_valid": False, "iterations": 0}, config={"configurable": {"llm": llm}})
-    builder.add_triples(state["extracted_triples"])
-    
+    workflow = create_agentic_workflow()
+
+    # Process the first note to generate the graph
+    state = workflow.invoke({"clinical_note": notes[0], "is_valid": False, "iterations": 0}, config={"configurable": {"llm": llm}})
+
+    # Add triples with labels for the edges
+    for t in state["extracted_triples"]:
+        builder.graph.add_edge(t.subject, t.obj, label=t.predicate)
+
+    # Save & Show using IFrame for best Colab compatibility
     path = f"data/processed/kg_{m_name}.html"
     visualize_graph(builder.graph, output_path=path)
-    print(f"🔍 Interactive Graph for {m_name}:")
-    display(HTML(filename=path))
+
+    display(IFrame(src=path, width='100%', height='600px'))
 ```
+
