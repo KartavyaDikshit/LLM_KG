@@ -90,7 +90,8 @@ def planner_node(state: AgentState, config=None):
         "iterations": state.get("iterations", 0) + 1
     }
 
-from langchain_core.output_parsers import JsonOutputParser
+import json
+import re
 
 def extractor_node(state: AgentState, config=None):
     """Extract triples from clinical text using the planner's strategy."""
@@ -100,10 +101,6 @@ def extractor_node(state: AgentState, config=None):
     if not llm_instance:
         llm_instance = get_llm()
         
-    # ChatOllama doesn't support with_structured_output natively in some versions
-    # We use a manual JSON parser and strict prompting instead
-    parser = JsonOutputParser(pydantic_object=ExtractionOutput)
-    
     prompt = ChatPromptTemplate.from_template(
         "You are a clinical NLP extractor. Your goal is to extract a HIGH DENSITY medical knowledge graph.\n"
         "Use the strategy provided to pull EVERY possible Subject-Predicate-Object triple.\n\n"
@@ -113,28 +110,46 @@ def extractor_node(state: AgentState, config=None):
         "- Be exhaustive. Do not miss any relationships mentioned.\n"
         "- Use standard medical terminology for nodes.\n"
         "- Predicates should be clear and consistent (e.g., HAS_SYMPTOM, PRESCRIBED_FOR, CONTRAINDICATED_WITH).\n\n"
-        "{format_instructions}\n"
+        "Output MUST be a valid JSON object with a key 'triples' containing a list of objects with 'subject', 'predicate', 'obj', and 'confidence' keys.\n"
+        "Example: {{\"triples\": [{{\"subject\": \"A\", \"predicate\": \"B\", \"obj\": \"C\", \"confidence\": 1.0}}]}}\n"
         "If this is a re-extraction, address this feedback: {feedback}\n"
     )
     
-    chain = prompt | llm_instance | parser
+    chain = prompt | llm_instance
     
     feedback = state.get("validation_feedback", "None")
-    result_dict = chain.invoke({
+    response = chain.invoke({
         "strategy": state["planner_strategy"],
         "note": state["clinical_note"],
-        "feedback": feedback,
-        "format_instructions": parser.get_format_instructions()
+        "feedback": feedback
     })
     
-    # Handle different output formats from different models
+    # Robust JSON parsing using Regex to find the JSON block
+    content = response.content
     triples = []
-    if isinstance(result_dict, dict) and 'triples' in result_dict:
-        for t in result_dict['triples']:
-            try:
-                triples.append(Triple(**t))
-            except:
-                continue
+    try:
+        # Find anything that looks like a JSON object or array
+        match = re.search(r'({.*}|\[.*\])', content, re.DOTALL)
+        if match:
+            raw_json = match.group(0)
+            data = json.loads(raw_json)
+            
+            # Handle list output directly
+            if isinstance(data, list):
+                result_list = data
+            elif isinstance(data, dict) and 'triples' in data:
+                result_list = data['triples']
+            else:
+                result_list = []
+                
+            for t in result_list:
+                try:
+                    triples.append(Triple(**t))
+                except:
+                    continue
+    except Exception as e:
+        print(f"Warning: Failed to parse JSON from {model_name if 'model_name' in locals() else 'model'}: {e}")
+        print(f"Raw output was: {content[:100]}...")
     
     return {"extracted_triples": triples}
 
