@@ -48,7 +48,7 @@ print("✅ Environment Ready!")
 *This cell rewrites the agent logic to ensure it never hangs and fixes broken JSON output automatically.*
 
 ```python
-patch_code = """
+patch_code = r"""
 import os, json, re
 from typing import List
 from langchain_community.chat_models import ChatOllama
@@ -75,12 +75,12 @@ def extractor_node(state: AgentState, config=None):
     llm = None
     if config: llm = config.get("configurable", {}).get("llm")
     if not llm: llm = get_llm()
-    prompt = ChatPromptTemplate.from_template("Extract JSON triples (subject, predicate, obj, confidence) from note: {note}\\nStrategy: {strategy}\\nOutput JSON only in format: {\\"triples\\": [...]}")
+    prompt = ChatPromptTemplate.from_template("Extract JSON triples (subject, predicate, obj, confidence) from note: {note}\nStrategy: {strategy}\nOutput JSON only in format: {\"triples\": [...]}")
     response = (prompt | llm).invoke({"strategy": state["planner_strategy"], "note": state["clinical_note"]})
     content = response.content
     triples = []
     # Regex to find JSON block in model output
-    match = re.search(r'(\\[.*\\\]|{.*})', content, re.DOTALL)
+    match = re.search(r'(\[.*\]|\{.*\})', content, re.DOTALL)
     if match:
         try:
             raw = match.group(0).replace("'", '"')
