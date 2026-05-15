@@ -8,8 +8,11 @@ def visualize_graph(nx_graph, output_path="data/processed/kg_visualization.html"
     """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
-    # Improved visualization settings
+    # Improved visualization settings - FORCE CDN for Vis.js compatibility
     net = Network(height="600px", width="100%", bgcolor="#ffffff", font_color="#333333", notebook=False, directed=True)
+    
+    # Use CDN links instead of local files
+    net.set_edge_smooth('dynamic')
     
     # Define color scheme for medical categories
     color_map = {
