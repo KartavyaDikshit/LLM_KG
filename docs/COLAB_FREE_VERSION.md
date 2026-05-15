@@ -72,7 +72,7 @@ def extractor_node(state: AgentState, config=None):
         "Extract medical triples from the note below as JSON.\n"
         "Strategy: {strategy}\n"
         "Note: {note}\n\n"
-        "Output ONLY valid JSON in this exact format: {\"triples\": [{\"subject\": \"term\", \"predicate\": \"relation\", \"obj\": \"term\", \"confidence\": 1.0}]}"
+        "Output ONLY valid JSON in this exact format: {{\"triples\": [{{\"subject\": \"term\", \"predicate\": \"relation\", \"obj\": \"term\", \"confidence\": 1.0}}]}}"
     )
     response = (prompt | llm).invoke({"strategy": state["planner_strategy"], "note": state["clinical_note"]})
     content = response.content
