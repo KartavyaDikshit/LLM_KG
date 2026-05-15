@@ -58,7 +58,8 @@ else:
 %cd /content/LLM_KG
 
 # Pull the Top 5 free medical-capable models
-models = ["llama3", "mistral", "gemma2", "phi3:medium", "biomistral:7b"]
+# Use 'biomistral' without :7b tag
+models = ["llama3", "mistral", "gemma2", "phi3:medium", "biomistral"]
 
 for model in models:
     print(f"📥 Downloading {model}...")
@@ -72,8 +73,6 @@ print("✅ Models and Data Downloaded!")
 ---
 
 ### 3️⃣ Step 3: Run Multi-Model Comparison
-*This cell is now robust to path errors.*
-
 ```python
 # Force directory context
 import os
@@ -90,8 +89,8 @@ notes_path = "data/raw/notes_sample.csv"
 notes = load_clinical_notes(notes_path)[:3]
 comparison_results = []
 
-# List of models to benchmark
-local_models = ["llama3", "mistral", "gemma2", "phi3:medium", "biomistral:7b"]
+# Standard model names
+local_models = ["llama3", "mistral", "gemma2", "phi3:medium", "biomistral"]
 
 print("🚀 Starting Benchmark...")
 for model_name in local_models:
@@ -128,10 +127,9 @@ print(tabulate(comparison_results, headers="keys", tablefmt="grid"))
 from src.graph.visualizer import visualize_graph
 from IPython.display import HTML, display
 
-for model_name in ["llama3", "mistral", "gemma2", "phi3_medium", "biomistral_7b"]:
+for model_name in ["llama3", "mistral", "gemma2", "phi3:medium", "biomistral"]:
     builder = GraphBuilder()
-    ollama_name = model_name.replace('_', ':')
-    llm = get_llm("ollama", ollama_name)
+    llm = get_llm("ollama", model_name)
     workflow = create_agentic_workflow()
     
     # Generate KG for the first note
@@ -139,7 +137,8 @@ for model_name in ["llama3", "mistral", "gemma2", "phi3_medium", "biomistral_7b"
     builder.add_triples(state["extracted_triples"])
     
     # Save visualization
-    output_path = f"data/processed/kg_{model_name}.html"
+    safe_name = model_name.replace(':', '_')
+    output_path = f"data/processed/kg_{safe_name}.html"
     visualize_graph(builder.graph, output_path=output_path)
     
     print(f"\n🔍 Interactive KG: {model_name}")
