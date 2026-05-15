@@ -71,12 +71,12 @@ def planner_node(state: AgentState, config=None):
 
 def extractor_node(state: AgentState, config=None):
     llm = config.get("configurable", {}).get("llm", get_llm()) if config else get_llm()
-    # Using explicit PromptTemplate to avoid brace-parsing issues
+    # Using explicit PromptTemplate with double-escaped braces for literal JSON
     template = (
         "Extract medical triples from the note below as JSON.\n"
         "Strategy: {strategy}\n"
         "Note: {note}\n\n"
-        "Output ONLY valid JSON in this exact format: {\"triples\": [{\"subject\": \"term\", \"predicate\": \"relation\", \"obj\": \"term\", \"confidence\": 1.0}]}"
+        "Output ONLY valid JSON in this exact format: {{\"triples\": [{{\"subject\": \"term\", \"predicate\": \"relation\", \"obj\": \"term\", \"confidence\": 1.0}}]}}"
     )
     prompt = PromptTemplate(template=template, input_variables=["strategy", "note"])
     response = (prompt | llm).invoke({"strategy": state["planner_strategy"], "note": state["clinical_note"]})
