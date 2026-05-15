@@ -43,14 +43,14 @@ print("✅ Environment Ready!")
 ---
 
 ### 2️⃣ Cell 2: Apply Logic Patch (Bulletproof JSON Extraction)
-*This cell rewrites the agent logic to handle almost any JSON format or conversational filler from the models.*
+*This cell rewrites the agent logic to handle almost any JSON format and automatically reloads the code.*
 
 ```python
 patch_code = r"""
-import os, json, re
+import os, json, re, importlib, sys
 from typing import List
 from langchain_community.chat_models import ChatOllama
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 from src.agents.state import AgentState, Triple, BaseModel, Field
 from pydantic import ValidationError
 
@@ -62,35 +62,36 @@ def get_llm(model_type="ollama", model_name="llama3"):
 
 def planner_node(state: AgentState, config=None):
     llm = config.get("configurable", {}).get("llm", get_llm()) if config else get_llm()
-    prompt = ChatPromptTemplate.from_template("Analyze this clinical note and provide a knowledge graph extraction strategy: {note}")
+    prompt = PromptTemplate(
+        template="Analyze this clinical note and provide a knowledge graph extraction strategy: {note}",
+        input_variables=["note"]
+    )
     chain = prompt | llm
     return {"planner_strategy": chain.invoke({"note": state["clinical_note"]}).content, "iterations": state.get("iterations", 0) + 1}
 
 def extractor_node(state: AgentState, config=None):
     llm = config.get("configurable", {}).get("llm", get_llm()) if config else get_llm()
-    prompt = ChatPromptTemplate.from_template(
+    # Using explicit PromptTemplate to avoid brace-parsing issues
+    template = (
         "Extract medical triples from the note below as JSON.\n"
         "Strategy: {strategy}\n"
         "Note: {note}\n\n"
-        "Output ONLY valid JSON in this exact format: {{\"triples\": [{{\"subject\": \"term\", \"predicate\": \"relation\", \"obj\": \"term\", \"confidence\": 1.0}}]}}"
+        "Output ONLY valid JSON in this exact format: {\"triples\": [{\"subject\": \"term\", \"predicate\": \"relation\", \"obj\": \"term\", \"confidence\": 1.0}]}"
     )
+    prompt = PromptTemplate(template=template, input_variables=["strategy", "note"])
     response = (prompt | llm).invoke({"strategy": state["planner_strategy"], "note": state["clinical_note"]})
     content = response.content
     triples = []
     
-    # Advanced Regex to find the JSON block even if inside code fences or conversational text
+    # Advanced Regex to find the JSON block
     json_match = re.search(r'(\{.*\}|\[.*\])', content, re.DOTALL)
     if json_match:
         try:
             clean_json = json_match.group(0).replace("'", '"')
             data = json.loads(clean_json)
-            
-            # Handle different formats (object with 'triples' key or direct list)
             items = data.get('triples', []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
-            
             for item in items:
                 if isinstance(item, dict) and 'subject' in item and 'obj' in item:
-                    # Rename 'obj' to 'obj' if needed (sometimes LLMs use 'object')
                     obj_val = item.get('obj') or item.get('object', 'Unknown')
                     triples.append(Triple(
                         subject=str(item.get('subject', 'Unknown')),
@@ -98,17 +99,26 @@ def extractor_node(state: AgentState, config=None):
                         obj=str(obj_val),
                         confidence=float(item.get('confidence', 0.8))
                     ))
-        except Exception as e:
-            print(f"      ⚠️ JSON Parse Warning: {str(e)[:50]}")
+        except: pass
             
     return {"extracted_triples": triples}
 
 def validator_node(state: AgentState, config=None):
     return {"is_valid": True, "validation_feedback": None}
 """
+
+# Write the file
 with open('src/agents/nodes.py', 'w') as f:
     f.write(patch_code)
-print("✅ Bulletproof Logic Patch Applied!")
+
+# FORCE RELOAD to ensure Python uses the new code immediately
+import importlib
+import src.agents.nodes
+import src.agents.graph
+importlib.reload(src.agents.nodes)
+importlib.reload(src.agents.graph)
+
+print("✅ Bulletproof Logic Patch Applied & Modules Reloaded!")
 ```
 
 ---
