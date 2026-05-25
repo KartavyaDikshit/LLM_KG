@@ -49,7 +49,10 @@ print("✅ Environment Ready!")
 patch_code = r"""
 import os, json, re, importlib, sys
 from typing import List
-from langchain_community.chat_models import ChatOllama
+try:
+    from langchain_ollama import ChatOllama
+except ImportError:
+    from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import PromptTemplate
 from src.agents.state import AgentState, Triple, BaseModel, Field
 from pydantic import ValidationError
