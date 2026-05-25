@@ -1,16 +1,88 @@
- ---------------------------------------------------------------------------
-FileNotFoundError                         Traceback (most recent call last)
-/tmp/ipykernel_1482/281724963.py in <cell line: 0>()
-      2 
-      3 # Create Domain Config Directory
-----> 4 os.makedirs('src/config/domains', exist_ok=True)
-      5 
-      6 # 1. Write Medical Config
+ 🔬 Running Medical Extraction...
+---------------------------------------------------------------------------
+ValueError                                Traceback (most recent call last)
+/tmp/ipykernel_7151/2303066282.py in <cell line: 0>()
+     19 print("🔬 Running Medical Extraction...")
+     20 med_text = "Patient with acute myocardial infarction prescribed Aspirin and Lisinopril."
+---> 21 res_med = workflow.invoke({"input_text": med_text, "domain": "medical", "is_valid": False, "iterations": 0}, config={"configurable": {"llm": llm}})
+     22 builder_med = GraphBuilder()
+     23 builder_med.add_triples(res_med["extracted_triples"])
 
-2 frames/usr/lib/python3.12/os.py in makedirs(name, mode, exist_ok)
+10 frames/usr/local/lib/python3.12/dist-packages/langgraph/pregel/main.py in invoke(self, input, config, context, stream_mode, print_mode, output_keys, interrupt_before, interrupt_after, durability, control, version, **kwargs)
+   3878         else:
+   3879             # v1: collect interrupts from updates stream
+-> 3880             for chunk in self.stream(
+   3881                 input,
+   3882                 config,
 
-/usr/lib/python3.12/os.py in makedirs(name, mode, exist_ok)
+/usr/local/lib/python3.12/dist-packages/langgraph/pregel/main.py in stream(self, input, config, context, stream_mode, print_mode, output_keys, interrupt_before, interrupt_after, durability, control, subgraphs, debug, version, **kwargs)
+   2934                     for task in loop.match_cached_writes():
+   2935                         loop.output_writes(task.id, task.writes, cached=True)
+-> 2936                     for _ in runner.tick(
+   2937                         [t for t in loop.tasks.values() if not t.writes],
+   2938                         timeout=self.step_timeout,
 
-/usr/lib/python3.12/os.py in makedirs(name, mode, exist_ok)
+/usr/local/lib/python3.12/dist-packages/langgraph/pregel/_runner.py in tick(self, tasks, reraise, timeout, retry_policy, get_waiter, schedule_task)
+    205             scheduled_error_handler = False
+    206             try:
+--> 207                 run_with_retry(
+    208                     t,
+    209                     retry_policy,
 
-FileNotFoundError: [Errno 2] No such file or directory: 'src'
+/usr/local/lib/python3.12/dist-packages/langgraph/pregel/_retry.py in run_with_retry(task, retry_policy, configurable)
+    583             task.writes.clear()
+    584             # run the task
+--> 585             return task.proc.invoke(task.input, config)
+    586         except ParentCommand as exc:
+    587             ns: str = config[CONF][CONFIG_KEY_CHECKPOINT_NS]
+
+/usr/local/lib/python3.12/dist-packages/langgraph/_internal/_runnable.py in invoke(self, input, config, **kwargs)
+    682                     # run in context
+    683                     with set_config_context(config, run) as context:
+--> 684                         input = context.run(step.invoke, input, config, **kwargs)
+    685                 else:
+    686                     input = step.invoke(input, config)
+
+/usr/local/lib/python3.12/dist-packages/langgraph/_internal/_runnable.py in invoke(self, input, config, **kwargs)
+    424                 run_manager.on_chain_end(ret)
+    425         else:
+--> 426             ret = self.func(*args, **kwargs)
+    427         if self.recurse and isinstance(ret, Runnable):
+    428             return ret.invoke(input, config)
+
+/content/LLM_KG/src/agents/nodes.py in extractor_node(state, config)
+     25     cfg = load_domain_config(state.get("domain", "medical"))
+     26     llm = config.get("configurable", {}).get("llm", get_llm()) if config else get_llm()
+---> 27     prompt = ChatPromptTemplate.from_template("Extract JSON triples for {name}.\nStrategy: {strat}\nText: {text}\nFormat: {'triples': [{'subject': '', 'predicate': '', 'obj': '', 'confidence': 1.0}]}")
+     28     res = (prompt | llm).invoke({"name": cfg["domain_name"], "strat": state["planner_strategy"], "text": state["input_text"]})
+     29     triples = []
+
+/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/chat.py in from_template(cls, template, **kwargs)
+   1113             A new instance of this class.
+   1114         """
+-> 1115         prompt_template = PromptTemplate.from_template(template, **kwargs)
+   1116         message = HumanMessagePromptTemplate(prompt=prompt_template)
+   1117         return cls.from_messages([message])
+
+/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/prompt.py in from_template(cls, template, template_format, partial_variables, **kwargs)
+    296             The prompt template loaded from the template.
+    297         """
+--> 298         input_variables = get_template_variables(template, template_format)
+    299         partial_variables_ = partial_variables or {}
+    300 
+
+/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/string.py in get_template_variables(template, template_format)
+    316         input_variables = sorted(_get_jinja2_variables_from_template(template))
+    317     elif template_format == "f-string":
+--> 318         input_variables = validate_f_string_template(template)
+    319     elif template_format == "mustache":
+    320         input_variables = mustache_template_vars(template)
+
+/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/string.py in validate_f_string_template(template)
+    253                 "Nested replacement fields are not allowed."
+    254             )
+--> 255             raise ValueError(msg)
+    256 
+    257         input_variables.add(var)
+
+ValueError: Invalid format specifier in f-string template. Nested replacement fields are not allowed.
