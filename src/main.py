@@ -16,11 +16,12 @@ def main():
     parser.add_argument("--notes", type=str, help="Path to MIMIC-IV clinical notes CSV", default="data/raw/notes_sample.csv")
     parser.add_argument("--fetch-ontology", action="store_true", help="Download ClinVec ontology from Dataverse")
     parser.add_argument("--limit", type=int, help="Limit the number of notes to process", default=5)
+    parser.add_argument("--domain", type=str, help="Domain config to use (medical/legal)", default="medical")
     
     args = parser.parse_args()
 
-    # Step 1: Fetch Ontology if requested
-    if args.fetch_ontology:
+    # Step 1: Fetch Ontology if requested (Medical only for now)
+    if args.fetch_ontology and args.domain == "medical":
         fetch_clinvec_data()
 
     # Step 2: Load Clinical Notes
@@ -38,9 +39,10 @@ def main():
 
     # Step 4: Run Agentic Pipeline for each note
     for i, note in enumerate(notes):
-        print(f"--- Processing Note {i+1}/{len(notes)} ---")
+        print(f"--- Processing {args.domain.capitalize()} Item {i+1}/{len(notes)} ---")
         initial_state = {
-            "clinical_note": note,
+            "input_text": note,
+            "domain": args.domain,
             "planner_strategy": None,
             "extracted_triples": [],
             "validation_feedback": None,
@@ -58,7 +60,7 @@ def main():
 
     # Step 5: Save and Visualize
     builder.save_graph()
-    visualize_graph(builder.graph)
+    visualize_graph(builder.graph, domain=args.domain)
     
     # Step 6: Evaluation
     from src.evaluation.metrics import evaluate_graph_quality, print_evaluation_report

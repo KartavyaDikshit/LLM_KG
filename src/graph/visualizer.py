@@ -2,24 +2,23 @@ from pyvis.network import Network
 import networkx as nx
 import os
 
-def visualize_graph(nx_graph, output_path="data/processed/kg_visualization.html"):
+import yaml
+
+def visualize_graph(nx_graph, domain="medical", output_path="data/processed/kg_visualization.html"):
     """
-    Visualize a NetworkX graph with categorical coloring and CDN-only assets for Colab.
+    Visualize a NetworkX graph with domain-specific categorical coloring.
     """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
-    # Use a white background for better visibility in Colab
+    # Load domain config for color map
+    config_path = f"src/config/domains/{domain}.yaml"
+    color_map = {}
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as f:
+            cfg = yaml.safe_load(f)
+            color_map = cfg.get("color_map", {})
+
     net = Network(height="550px", width="100%", bgcolor="#ffffff", font_color="#333333", notebook=False, directed=True)
-    
-    # Force CDN to avoid local file path issues in Colab
-    net.set_edge_smooth('dynamic')
-    
-    color_map = {
-        "drug": "#3b82f6", "medication": "#3b82f6",
-        "disease": "#ef4444", "condition": "#ef4444",
-        "symptom": "#f59e0b", "test": "#10b981",
-        "procedure": "#8b5cf6", "patient": "#6b7280"
-    }
     
     for node in nx_graph.nodes():
         node_label = str(node)

@@ -9,7 +9,8 @@ class Triple(BaseModel):
     confidence: float = Field(description="Confidence score for this extraction", ge=0, le=1)
 
 class AgentState(TypedDict):
-    clinical_note: str
+    input_text: str
+    domain: str
     planner_strategy: Optional[str]
     extracted_triples: List[Triple]
     validation_feedback: Optional[str]
