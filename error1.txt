@@ -1,14 +1,144 @@
- ⚖️ Ingesting FULL Legal Dataset (BillSum)...
-README.md:  7.27k/? [00:00<00:00, 1.27MB/s]data/train-00000-of-00001.parquet: 100% 91.8M/91.8M [00:01<00:00, 210MB/s]data/test-00000-of-00001.parquet: 100% 15.8M/15.8M [00:00<00:00, 78.8MB/s]data/ca_test-00000-of-00001.parquet: 100% 6.12M/6.12M [00:01<00:00, 30.5MB/s]Generating train split: 100% 18949/18949 [00:00<00:00, 52454.39 examples/s]Generating test split: 100% 3269/3269 [00:00<00:00, 47154.89 examples/s]Generating ca_test split: 100% 1237/1237 [00:00<00:00, 42614.47 examples/s]   - Loaded 20 high-density legal documents.
-🔬 Ingesting Medical Ontology...
-python3: can't open file '/content/LLM_KG/src/ingestion/fetcher.py': [Errno 2] No such file or directory
-✅ Data Ingestion Complete. Ready for 50 item benchmark.
- ---------------------------------------------------------------------------
-FileNotFoundError                         Traceback (most recent call last)
-/tmp/ipykernel_1596/2898619655.py in <cell line: 0>()
-     49     return {"is_valid": True}
-     50 '''
----> 51 with open('src/agents/nodes.py', 'w') as f: f.write(patch_code)
-     52 print("✅ High-Recall Logic Applied.")
+ 🚀 Model: llama3 | Domain: medical
+---------------------------------------------------------------------------
+KeyError                                  Traceback (most recent call last)
+/tmp/ipykernel_6282/2041565240.py in <cell line: 0>()
+     20 
+     21         for text in texts:
+---> 22             res = workflow.invoke(
+     23                 {"input_text": text, "domain": domain, "is_valid": False, "iterations": 0},
+     24                 config={"configurable": {"llm": llm}}
 
-FileNotFoundError: [Errno 2] No such file or directory: 'src/agents/nodes.py'
+18 frames/usr/local/lib/python3.12/dist-packages/langgraph/pregel/main.py in invoke(self, input, config, context, stream_mode, print_mode, output_keys, interrupt_before, interrupt_after, durability, control, version, **kwargs)
+   3878         else:
+   3879             # v1: collect interrupts from updates stream
+-> 3880             for chunk in self.stream(
+   3881                 input,
+   3882                 config,
+
+/usr/local/lib/python3.12/dist-packages/langgraph/pregel/main.py in stream(self, input, config, context, stream_mode, print_mode, output_keys, interrupt_before, interrupt_after, durability, control, subgraphs, debug, version, **kwargs)
+   2934                     for task in loop.match_cached_writes():
+   2935                         loop.output_writes(task.id, task.writes, cached=True)
+-> 2936                     for _ in runner.tick(
+   2937                         [t for t in loop.tasks.values() if not t.writes],
+   2938                         timeout=self.step_timeout,
+
+/usr/local/lib/python3.12/dist-packages/langgraph/pregel/_runner.py in tick(self, tasks, reraise, timeout, retry_policy, get_waiter, schedule_task)
+    205             scheduled_error_handler = False
+    206             try:
+--> 207                 run_with_retry(
+    208                     t,
+    209                     retry_policy,
+
+/usr/local/lib/python3.12/dist-packages/langgraph/pregel/_retry.py in run_with_retry(task, retry_policy, configurable)
+    583             task.writes.clear()
+    584             # run the task
+--> 585             return task.proc.invoke(task.input, config)
+    586         except ParentCommand as exc:
+    587             ns: str = config[CONF][CONFIG_KEY_CHECKPOINT_NS]
+
+/usr/local/lib/python3.12/dist-packages/langgraph/_internal/_runnable.py in invoke(self, input, config, **kwargs)
+    682                     # run in context
+    683                     with set_config_context(config, run) as context:
+--> 684                         input = context.run(step.invoke, input, config, **kwargs)
+    685                 else:
+    686                     input = step.invoke(input, config)
+
+/usr/local/lib/python3.12/dist-packages/langgraph/_internal/_runnable.py in invoke(self, input, config, **kwargs)
+    424                 run_manager.on_chain_end(ret)
+    425         else:
+--> 426             ret = self.func(*args, **kwargs)
+    427         if self.recurse and isinstance(ret, Runnable):
+    428             return ret.invoke(input, config)
+
+/content/LLM_KG/src/agents/nodes.py in extractor_node(state, config)
+     33         "Text: {text}"
+     34     )
+---> 35     res = llm.invoke(prompt.format(name=cfg["domain_name"], entities=cfg["entity_types"], rels=cfg["allowed_predicates"], text=state["input_text"]))
+     36     triples = []
+     37     match = re.search(r"(\{.*\}|\[.*\])", res.content, re.DOTALL)
+
+/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/chat.py in format(self, **kwargs)
+    707             Formatted string.
+    708         """
+--> 709         return self.format_prompt(**kwargs).to_string()
+    710 
+    711     async def aformat(self, **kwargs: Any) -> str:
+
+/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/chat.py in format_prompt(self, **kwargs)
+    729             **kwargs: Keyword arguments to use for formatting.
+    730         """
+--> 731         messages = self.format_messages(**kwargs)
+    732         return ChatPromptValue(messages=messages)
+    733 
+
+/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/chat.py in format_messages(self, **kwargs)
+   1189                 message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
+   1190             ):
+-> 1191                 message = message_template.format_messages(**kwargs)
+   1192                 result.extend(message)
+   1193             else:
+
+/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/chat.py in format_messages(self, **kwargs)
+    559             List of `BaseMessage` objects.
+    560         """
+--> 561         return [self.format(**kwargs)]
+    562 
+    563     async def aformat_messages(self, **kwargs: Any) -> list[BaseMessage]:
+
+/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/chat.py in format(self, **kwargs)
+    592         """
+    593         if isinstance(self.prompt, StringPromptTemplate):
+--> 594             text = self.prompt.format(**kwargs)
+    595             return self._msg_class(
+    596                 content=text, additional_kwargs=self.additional_kwargs
+
+/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/prompt.py in format(self, **kwargs)
+    199         """
+    200         kwargs = self._merge_partial_and_user_variables(**kwargs)
+--> 201         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
+    202 
+    203     @classmethod
+
+/usr/lib/python3.12/string.py in format(self, format_string, *args, **kwargs)
+    188 class Formatter:
+    189     def format(self, format_string, /, *args, **kwargs):
+--> 190         return self.vformat(format_string, args, kwargs)
+    191 
+    192     def vformat(self, format_string, args, kwargs):
+
+/usr/local/lib/python3.12/dist-packages/langchain_core/utils/formatting.py in vformat(self, format_string, args, kwargs)
+     46             )
+     47             raise ValueError(msg)
+---> 48         return super().vformat(format_string, args, kwargs)
+     49 
+     50     def validate_input_variables(
+
+/usr/lib/python3.12/string.py in vformat(self, format_string, args, kwargs)
+    192     def vformat(self, format_string, args, kwargs):
+    193         used_args = set()
+--> 194         result, _ = self._vformat(format_string, args, kwargs, used_args, 2)
+    195         self.check_unused_args(used_args, args, kwargs)
+    196         return result
+
+/usr/lib/python3.12/string.py in _vformat(self, format_string, args, kwargs, used_args, recursion_depth, auto_arg_index)
+    232                 # given the field_name, find the object it references
+    233                 #  and the argument it came from
+--> 234                 obj, arg_used = self.get_field(field_name, args, kwargs)
+    235                 used_args.add(arg_used)
+    236 
+
+/usr/lib/python3.12/string.py in get_field(self, field_name, args, kwargs)
+    297         first, rest = _string.formatter_field_name_split(field_name)
+    298 
+--> 299         obj = self.get_value(first, args, kwargs)
+    300 
+    301         # loop through the rest of the field_name, doing
+
+/usr/lib/python3.12/string.py in get_value(self, key, args, kwargs)
+    254             return args[key]
+    255         else:
+--> 256             return kwargs[key]
+    257 
+    258 
+
+KeyError: "'subject'"
