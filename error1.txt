@@ -51,11 +51,11 @@ KeyError                                  Traceback (most recent call last)
     428             return ret.invoke(input, config)
 
 /content/LLM_KG/src/agents/nodes.py in extractor_node(state, config)
-     33         "Text: {text}"
-     34     )
----> 35     res = llm.invoke(prompt.format(name=cfg["domain_name"], entities=cfg["entity_types"], rels=cfg["allowed_predicates"], text=state["input_text"]))
-     36     triples = []
-     37     match = re.search(r"(\{.*\}|\[.*\])", res.content, re.DOTALL)
+     33         "Format: {{'triples': [{{'subject': '', 'predicate': '', 'obj': '', 'confidence': 1.0}}]}}\n\n"
+     34         "Text: {text}"
+---> 35     )
+     36     chain = prompt | llm
+     37     res = chain.invoke({
 
 /usr/local/lib/python3.12/dist-packages/langchain_core/prompts/chat.py in format(self, **kwargs)
     707             Formatted string.

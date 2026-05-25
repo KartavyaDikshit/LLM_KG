@@ -130,7 +130,7 @@ def extractor_node(state, config=None):
         "Identify ALL entities: {entities}\n"
         "Identify ALL relationships: {rels}\n"
         "BE EXHAUSTIVE. If a sentence implies a link, extract it.\n"
-        "Format: {{'triples': [{{'subject': '', 'predicate': '', 'obj': '', 'confidence': 1.0}}]}}\n\n"
+        "Format: {{\"triples\": [{{\"subject\": \"\", \"predicate\": \"\", \"obj\": \"\", \"confidence\": 1.0}}]}}\n\n"
         "Text: {text}"
     )
     chain = prompt | llm
