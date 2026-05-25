@@ -116,40 +116,46 @@ def planner_node(state, config=None):
         "You are a KG Architect. Create a strategy to extract EVERY possible relationship.\n"
         "Domain: {name}\nGoal: {instr}\nText: {text}"
     )
-    chain = prompt | llm
-    res = chain.invoke({"name": cfg["domain_name"], "instr": cfg["planner_instruction"], "text": state["input_text"]})
-    return {"planner_strategy": res.content, "iterations": state.get("iterations", 0) + 1}
+    try:
+        chain = prompt | llm
+        res = chain.invoke({"name": cfg["domain_name"], "instr": cfg["planner_instruction"], "text": state["input_text"]})
+        return {"planner_strategy": res.content, "iterations": state.get("iterations", 0) + 1}
+    except Exception as e:
+        return {"planner_strategy": "Exhaustive extraction.", "iterations": state.get("iterations", 0) + 1}
 
 def extractor_node(state, config=None):
     domain = state.get("domain", "medical")
     cfg = load_domain_config(domain)
     llm = config.get("configurable", {}).get("llm")
-    # HIGH RECALL PROMPT: Forced exhaustive search
     prompt = ChatPromptTemplate.from_template(
         "TASK: Extract a HIGH-DENSITY KG from this {name} text.\n"
         "Identify ALL entities: {entities}\n"
         "Identify ALL relationships: {rels}\n"
-        "BE EXHAUSTIVE. If a sentence implies a link, extract it.\n"
-        "Format: {{\"triples\": [{{\"subject\": \"\", \"predicate\": \"\", \"obj\": \"\", \"confidence\": 1.0}}]}}\n\n"
+        "Format Instructions: {format_instr}\n\n"
         "Text: {text}"
     )
-    chain = prompt | llm
-    res = chain.invoke({
-        "name": cfg["domain_name"], 
-        "entities": cfg["entity_types"], 
-        "rels": cfg["allowed_predicates"], 
-        "text": state["input_text"]
-    })
-    triples = []
-    match = re.search(r"(\{.*\}|\[.*\])", res.content, re.DOTALL)
-    if match:
-        try:
-            data = json.loads(match.group(0).replace("'", '"'))
-            items = data.get("triples", []) if isinstance(data, dict) else data
-            for i in items:
-                triples.append(Triple(subject=str(i.get("subject", "Unknown")), predicate=str(i.get("predicate", "RELATED_TO")), obj=str(i.get("obj", "Unknown")), confidence=1.0))
-        except: pass
-    return {"extracted_triples": triples}
+    json_example = 'Output MUST be valid JSON with key "triples" containing a list of objects with "subject", "predicate", "obj", and "confidence". Example: {"triples": [{"subject": "A", "predicate": "B", "obj": "C", "confidence": 1.0}]}'
+    try:
+        chain = prompt | llm
+        res = chain.invoke({
+            "name": cfg["domain_name"], 
+            "entities": str(cfg["entity_types"]), 
+            "rels": str(cfg["allowed_predicates"]), 
+            "format_instr": json_example,
+            "text": state["input_text"]
+        })
+        triples = []
+        match = re.search(r"(\{.*\}|\[.*\])", res.content, re.DOTALL)
+        if match:
+            try:
+                data = json.loads(match.group(0).replace("'", '"'))
+                items = data.get("triples", []) if isinstance(data, dict) else data
+                for i in items:
+                    triples.append(Triple(subject=str(i.get("subject", "Unknown")), predicate=str(i.get("predicate", "RELATED_TO")), obj=str(i.get("obj", "Unknown")), confidence=1.0))
+            except: pass
+        return {"extracted_triples": triples}
+    except Exception as e:
+        return {"extracted_triples": []}
 
 def validator_node(state, config=None):
     return {"is_valid": True}

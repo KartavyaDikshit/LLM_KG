@@ -51,7 +51,7 @@ KeyError                                  Traceback (most recent call last)
     428             return ret.invoke(input, config)
 
 /content/LLM_KG/src/agents/nodes.py in extractor_node(state, config)
-     33         "Format: {{'triples': [{{'subject': '', 'predicate': '', 'obj': '', 'confidence': 1.0}}]}}\n\n"
+     33         "Format: {{\"triples\": [{{\"subject\": \"\", \"predicate\": \"\", \"obj\": \"\", \"confidence\": 1.0}}]}}\n\n"
      34         "Text: {text}"
 ---> 35     )
      36     chain = prompt | llm
