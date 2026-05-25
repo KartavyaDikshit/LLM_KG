@@ -5,7 +5,10 @@ import yaml
 from typing import List, Dict, Any
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
-from langchain_community.chat_models import ChatOllama
+try:
+    from langchain_ollama import ChatOllama
+except ImportError:
+    from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from src.agents.state import AgentState, Triple, BaseModel, Field
 from pydantic import ValidationError

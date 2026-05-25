@@ -1,0 +1,33 @@
+ ---------------------------------------------------------------------------
+ImportError                               Traceback (most recent call last)
+/tmp/ipykernel_1482/2303066282.py in <cell line: 0>()
+      1 import os, base64
+----> 2 from src.agents.graph import create_agentic_workflow
+      3 from src.agents.nodes import get_llm
+      4 from src.graph.builder import GraphBuilder
+      5 from src.graph.visualizer import visualize_graph
+
+1 frames/content/LLM_KG/src/agents/graph.py in <module>
+      1 from langgraph.graph import StateGraph, END
+      2 from src.agents.state import AgentState
+----> 3 from src.agents.nodes import planner_node, extractor_node, validator_node
+      4 
+      5 def create_agentic_workflow():
+
+/content/LLM_KG/src/agents/nodes.py in <module>
+      1 
+      2 import os, json, re, yaml
+----> 3 from langchain_community.chat_models import ChatOllama
+      4 from langchain_core.prompts import ChatPromptTemplate
+      5 from src.agents.state import AgentState, Triple
+
+ImportError: cannot import name 'ChatOllama' from 'langchain_community.chat_models' (/usr/local/lib/python3.12/dist-packages/langchain_community/chat_models/__init__.py)
+
+---------------------------------------------------------------------------
+NOTE: If your import is failing due to a missing package, you can
+manually install dependencies using either !pip or !apt.
+
+To view examples of installing some common dependencies, click the
+"Open Examples" button below.
+---------------------------------------------------------------------------
+Open Examples

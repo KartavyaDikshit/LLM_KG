@@ -42,7 +42,10 @@ color_map:
 # 3. Apply Multi-Domain Node Logic
 patch_code = r'''
 import os, json, re, yaml
-from langchain_community.chat_models import ChatOllama
+try:
+    from langchain_ollama import ChatOllama
+except ImportError:
+    from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from src.agents.state import AgentState, Triple
 

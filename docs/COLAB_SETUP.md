@@ -14,7 +14,7 @@ if os.path.exists(PROJECT_DIR): shutil.rmtree(PROJECT_DIR)
 %cd {PROJECT_DIR}
 
 !pip install -r requirements.txt --quiet
-!pip install langchain-community pyvis tabulate PyYAML --quiet
+!pip install langchain-community langchain-ollama pyvis tabulate PyYAML --quiet
 sys.path.append(PROJECT_DIR)
 
 # 3. Setup Ollama (Local Engine)
