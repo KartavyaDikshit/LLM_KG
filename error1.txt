@@ -1,52 +1,14 @@
- `trust_remote_code` is not supported anymore.
-Please check that the Hugging Face dataset 'cuad' isn't based on a loading script and remove `trust_remote_code`.
-If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
-ERROR:datasets.load:`trust_remote_code` is not supported anymore.
-Please check that the Hugging Face dataset 'cuad' isn't based on a loading script and remove `trust_remote_code`.
-If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
-⚖️ Ingesting FULL Legal Dataset (CUAD)...
-`trust_remote_code` is not supported anymore.
-Please check that the Hugging Face dataset 'theatticusproject/cuad-qa' isn't based on a loading script and remove `trust_remote_code`.
-If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
-ERROR:datasets.load:`trust_remote_code` is not supported anymore.
-Please check that the Hugging Face dataset 'theatticusproject/cuad-qa' isn't based on a loading script and remove `trust_remote_code`.
-If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
-   ⚠️ Primary CUAD load failed, trying fallback: No (supported) data files found in cuad
-README.md:  15.5k/? [00:00<00:00, 2.53MB/s]cuad-qa.py:  5.19k/? [00:00<00:00, 843kB/s]---------------------------------------------------------------------------
-RuntimeError                              Traceback (most recent call last)
-/tmp/ipykernel_1596/2080723370.py in <cell line: 0>()
-     11     print(f"   ⚠️ Primary CUAD load failed, trying fallback: {e}")
-     12     # Fallback to the QA-specific version which is often more stable
----> 13     legal_ds = load_dataset("theatticusproject/cuad-qa", split="train", trust_remote_code=True)
-     14 legal_corpus = legal_ds['context'][:50] # Taking first 50 full-length contracts for scale
-     15 print(f"   - Loaded {len(legal_corpus)} full legal contracts.")
+ ⚖️ Ingesting FULL Legal Dataset (BillSum)...
+README.md:  7.27k/? [00:00<00:00, 1.27MB/s]data/train-00000-of-00001.parquet: 100% 91.8M/91.8M [00:01<00:00, 210MB/s]data/test-00000-of-00001.parquet: 100% 15.8M/15.8M [00:00<00:00, 78.8MB/s]data/ca_test-00000-of-00001.parquet: 100% 6.12M/6.12M [00:01<00:00, 30.5MB/s]Generating train split: 100% 18949/18949 [00:00<00:00, 52454.39 examples/s]Generating test split: 100% 3269/3269 [00:00<00:00, 47154.89 examples/s]Generating ca_test split: 100% 1237/1237 [00:00<00:00, 42614.47 examples/s]   - Loaded 20 high-density legal documents.
+🔬 Ingesting Medical Ontology...
+python3: can't open file '/content/LLM_KG/src/ingestion/fetcher.py': [Errno 2] No such file or directory
+✅ Data Ingestion Complete. Ready for 50 item benchmark.
+ ---------------------------------------------------------------------------
+FileNotFoundError                         Traceback (most recent call last)
+/tmp/ipykernel_1596/2898619655.py in <cell line: 0>()
+     49     return {"is_valid": True}
+     50 '''
+---> 51 with open('src/agents/nodes.py', 'w') as f: f.write(patch_code)
+     52 print("✅ High-Recall Logic Applied.")
 
-3 frames/usr/local/lib/python3.12/dist-packages/datasets/load.py in load_dataset(path, name, data_dir, data_files, split, cache_dir, features, download_config, download_mode, verification_mode, keep_in_memory, save_infos, revision, token, streaming, num_proc, storage_options, **config_kwargs)
-   1686 
-   1687     # Create a dataset builder
--> 1688     builder_instance = load_dataset_builder(
-   1689         path=path,
-   1690         name=name,
-
-/usr/local/lib/python3.12/dist-packages/datasets/load.py in load_dataset_builder(path, name, data_dir, data_files, cache_dir, features, download_config, download_mode, revision, token, storage_options, **config_kwargs)
-   1313     if features is not None:
-   1314         features = _fix_for_backward_compatible_features(features)
--> 1315     dataset_module = dataset_module_factory(
-   1316         path,
-   1317         revision=revision,
-
-/usr/local/lib/python3.12/dist-packages/datasets/load.py in dataset_module_factory(path, revision, download_config, download_mode, data_dir, data_files, cache_dir, **download_kwargs)
-   1205                         f"Couldn't find '{path}' on the Hugging Face Hub either: {type(e1).__name__}: {e1}"
-   1206                     ) from None
--> 1207                 raise e1 from None
-   1208     else:
-   1209         raise FileNotFoundError(f"Couldn't find any data file at {relative_to_absolute_path(path)}.")
-
-/usr/local/lib/python3.12/dist-packages/datasets/load.py in dataset_module_factory(path, revision, download_config, download_mode, data_dir, data_files, cache_dir, **download_kwargs)
-   1165                     proxies=download_config.proxies,
-   1166                 )
--> 1167                 raise RuntimeError(f"Dataset scripts are no longer supported, but found {filename}")
-   1168             except EntryNotFoundError:
-   1169                 # Use the infos from the parquet export except in some cases:
-
-RuntimeError: Dataset scripts are no longer supported, but found cuad-qa.py
+FileNotFoundError: [Errno 2] No such file or directory: 'src/agents/nodes.py'
