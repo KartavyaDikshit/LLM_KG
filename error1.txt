@@ -1,88 +1,57 @@
- 🔬 Running Medical Extraction...
+ /content/LLM_KG
+📦 Installing Research Stack...
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 42.0/42.0 kB 2.0 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 114.3/114.3 kB 7.7 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.4/2.4 MB 65.8 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 235.3/235.3 kB 23.0 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.0/1.0 MB 55.0 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 548.1/548.1 kB 41.1 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 56.2/56.2 kB 5.8 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 41.0/41.0 kB 3.9 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 98.2/98.2 kB 9.3 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 399.6/399.6 kB 35.3 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 61.0/61.0 kB 6.4 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.1/73.1 kB 7.5 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.4/3.4 MB 115.1 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 611.4/611.4 kB 50.4 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.0/134.0 kB 14.7 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 212.6/212.6 kB 21.2 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 54.5/54.5 kB 5.7 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 325.6/325.6 kB 31.0 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.5/5.5 MB 116.8 MB/s eta 0:00:00
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+google-colab 1.0.0 requires requests==2.32.4, but you have requests 2.34.2 which is incompatible.
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 40.8/40.8 kB 3.4 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 756.0/756.0 kB 21.1 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 47.1/47.1 kB 4.5 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.9/4.9 MB 121.9 MB/s eta 0:00:00
+📥 Starting Ollama (T4 GPU Optimized)...
+>>> Installing ollama to /usr/local
+ERROR: This version requires zstd for extraction. Please install zstd and try again:
+  - Debian/Ubuntu: sudo apt-get install zstd
+  - RHEL/CentOS/Fedora: sudo dnf install zstd
+  - Arch: sudo pacman -S zstd
 ---------------------------------------------------------------------------
-ValueError                                Traceback (most recent call last)
-/tmp/ipykernel_7151/2303066282.py in <cell line: 0>()
-     19 print("🔬 Running Medical Extraction...")
-     20 med_text = "Patient with acute myocardial infarction prescribed Aspirin and Lisinopril."
----> 21 res_med = workflow.invoke({"input_text": med_text, "domain": "medical", "is_valid": False, "iterations": 0}, config={"configurable": {"llm": llm}})
-     22 builder_med = GraphBuilder()
-     23 builder_med.add_triples(res_med["extracted_triples"])
+FileNotFoundError                         Traceback (most recent call last)
+/tmp/ipykernel_738/3213814292.py in <cell line: 0>()
+     16 print("📥 Starting Ollama (T4 GPU Optimized)...")
+     17 get_ipython().system('curl -fsSL https://ollama.com/install.sh | sh')
+---> 18 subprocess.Popen(["ollama", "serve"])
+     19 time.sleep(15)
+     20 
 
-10 frames/usr/local/lib/python3.12/dist-packages/langgraph/pregel/main.py in invoke(self, input, config, context, stream_mode, print_mode, output_keys, interrupt_before, interrupt_after, durability, control, version, **kwargs)
-   3878         else:
-   3879             # v1: collect interrupts from updates stream
--> 3880             for chunk in self.stream(
-   3881                 input,
-   3882                 config,
+1 frames/usr/lib/python3.12/subprocess.py in __init__(self, args, bufsize, executable, stdin, stdout, stderr, preexec_fn, close_fds, shell, cwd, env, universal_newlines, startupinfo, creationflags, restore_signals, start_new_session, pass_fds, user, group, extra_groups, encoding, errors, text, umask, pipesize, process_group)
+   1024                             encoding=encoding, errors=errors)
+   1025 
+-> 1026             self._execute_child(args, executable, preexec_fn, close_fds,
+   1027                                 pass_fds, cwd, env,
+   1028                                 startupinfo, creationflags, shell,
 
-/usr/local/lib/python3.12/dist-packages/langgraph/pregel/main.py in stream(self, input, config, context, stream_mode, print_mode, output_keys, interrupt_before, interrupt_after, durability, control, subgraphs, debug, version, **kwargs)
-   2934                     for task in loop.match_cached_writes():
-   2935                         loop.output_writes(task.id, task.writes, cached=True)
--> 2936                     for _ in runner.tick(
-   2937                         [t for t in loop.tasks.values() if not t.writes],
-   2938                         timeout=self.step_timeout,
+/usr/lib/python3.12/subprocess.py in _execute_child(self, args, executable, preexec_fn, close_fds, pass_fds, cwd, env, startupinfo, creationflags, shell, p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite, restore_signals, gid, gids, uid, umask, start_new_session, process_group)
+   1953                         err_msg = os.strerror(errno_num)
+   1954                     if err_filename is not None:
+-> 1955                         raise child_exception_type(errno_num, err_msg, err_filename)
+   1956                     else:
+   1957                         raise child_exception_type(errno_num, err_msg)
 
-/usr/local/lib/python3.12/dist-packages/langgraph/pregel/_runner.py in tick(self, tasks, reraise, timeout, retry_policy, get_waiter, schedule_task)
-    205             scheduled_error_handler = False
-    206             try:
---> 207                 run_with_retry(
-    208                     t,
-    209                     retry_policy,
-
-/usr/local/lib/python3.12/dist-packages/langgraph/pregel/_retry.py in run_with_retry(task, retry_policy, configurable)
-    583             task.writes.clear()
-    584             # run the task
---> 585             return task.proc.invoke(task.input, config)
-    586         except ParentCommand as exc:
-    587             ns: str = config[CONF][CONFIG_KEY_CHECKPOINT_NS]
-
-/usr/local/lib/python3.12/dist-packages/langgraph/_internal/_runnable.py in invoke(self, input, config, **kwargs)
-    682                     # run in context
-    683                     with set_config_context(config, run) as context:
---> 684                         input = context.run(step.invoke, input, config, **kwargs)
-    685                 else:
-    686                     input = step.invoke(input, config)
-
-/usr/local/lib/python3.12/dist-packages/langgraph/_internal/_runnable.py in invoke(self, input, config, **kwargs)
-    424                 run_manager.on_chain_end(ret)
-    425         else:
---> 426             ret = self.func(*args, **kwargs)
-    427         if self.recurse and isinstance(ret, Runnable):
-    428             return ret.invoke(input, config)
-
-/content/LLM_KG/src/agents/nodes.py in extractor_node(state, config)
-     25     cfg = load_domain_config(state.get("domain", "medical"))
-     26     llm = config.get("configurable", {}).get("llm", get_llm()) if config else get_llm()
----> 27     prompt = ChatPromptTemplate.from_template("Extract JSON triples for {name}.\nStrategy: {strat}\nText: {text}\nFormat: {'triples': [{'subject': '', 'predicate': '', 'obj': '', 'confidence': 1.0}]}")
-     28     res = (prompt | llm).invoke({"name": cfg["domain_name"], "strat": state["planner_strategy"], "text": state["input_text"]})
-     29     triples = []
-
-/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/chat.py in from_template(cls, template, **kwargs)
-   1113             A new instance of this class.
-   1114         """
--> 1115         prompt_template = PromptTemplate.from_template(template, **kwargs)
-   1116         message = HumanMessagePromptTemplate(prompt=prompt_template)
-   1117         return cls.from_messages([message])
-
-/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/prompt.py in from_template(cls, template, template_format, partial_variables, **kwargs)
-    296             The prompt template loaded from the template.
-    297         """
---> 298         input_variables = get_template_variables(template, template_format)
-    299         partial_variables_ = partial_variables or {}
-    300 
-
-/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/string.py in get_template_variables(template, template_format)
-    316         input_variables = sorted(_get_jinja2_variables_from_template(template))
-    317     elif template_format == "f-string":
---> 318         input_variables = validate_f_string_template(template)
-    319     elif template_format == "mustache":
-    320         input_variables = mustache_template_vars(template)
-
-/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/string.py in validate_f_string_template(template)
-    253                 "Nested replacement fields are not allowed."
-    254             )
---> 255             raise ValueError(msg)
-    256 
-    257         input_variables.add(var)
-
-ValueError: Invalid format specifier in f-string template. Nested replacement fields are not allowed.
+FileNotFoundError: [Errno 2] No such file or directory: 'ollama'
