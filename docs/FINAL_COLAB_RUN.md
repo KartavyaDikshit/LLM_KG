@@ -82,8 +82,8 @@ import time
 # Initialize
 ms = MilestoneManager()
 neo = Neo4jManager(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
-# FAST MODE: Bypasses planner/validator for speed on CPU/TPU
-workflow = create_agentic_workflow(fast_mode=True)
+# FULL PIPELINE: Using all agents (Planner, Extractor, Validator, Deduplicator)
+workflow = create_agentic_workflow()
 model_name = "llama3"
 llm = ChatOllama(model=model_name, temperature=0)
 
@@ -124,9 +124,9 @@ for domain, corpus in datasets_to_process:
             continue 
 
         try:
-            # Reduced to 1000 chars for extreme speed-up
+            # Full 2000 char processing for high-density extraction
             res = workflow.invoke(
-                {"input_text": text[:1000], "domain": domain, "is_valid": False, "iterations": 0},
+                {"input_text": text[:2000], "domain": domain, "is_valid": False, "iterations": 0},
                 config={"configurable": {"llm": llm}}
             )
             triples = res.get("extracted_triples", [])
