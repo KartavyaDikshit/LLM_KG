@@ -113,23 +113,39 @@ def extractor_node(state: AgentState, config=None):
         content = response.content
         triples = []
         
-        # Robust parsing
+        # Ultra-robust parsing for conversational LLMs
         def extract_json_data(text):
-            m = re.search(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
-            if m: text = m.group(1)
-            start, end = text.find('{'), text.rfind('}')
-            if start != -1 and end != -1:
-                try: return json.loads(text[start:end+1].replace("'", '"'))
+            # 1. Try finding by markdown blocks first
+            blocks = re.findall(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
+            # 2. If no blocks, use the whole text (handles cases where LLM omits markdown)
+            candidates = blocks if blocks else [text]
+            
+            for raw in candidates:
+                # Find outermost braces/brackets
+                s_brace, e_brace = raw.find('{'), raw.rfind('}')
+                s_bracket, e_bracket = raw.find('['), raw.rfind(']')
+                
+                # Determine which structure is most likely
+                if s_brace != -1 and (s_brace < s_bracket or s_bracket == -1):
+                    clean = raw[s_brace:e_brace+1]
+                elif s_bracket != -1:
+                    clean = raw[s_bracket:e_bracket+1]
+                else:
+                    continue
+
+                # Handle "Dirty JSON" (Common LLM hallucination: comments inside JSON)
+                # Remove common "(Inferred...)" or other text after numbers
+                clean = re.sub(r'(\d+\.?\d*)\s*\([^)]*\)', r'\1', clean)
+                # Replace single quotes with double quotes
+                clean = clean.replace("'", '"')
+                
+                # Try Strategy A: Standard JSON
+                try: return json.loads(clean)
                 except: pass
+                
+                # Try Strategy B: Python Literal Eval (handles missing quotes on keys etc)
                 import ast
-                try: return ast.literal_eval(text[start:end+1])
-                except: pass
-            start, end = text.find('['), text.rfind(']')
-            if start != -1 and end != -1:
-                try: return json.loads(text[start:end+1].replace("'", '"'))
-                except: pass
-                import ast
-                try: return ast.literal_eval(text[start:end+1])
+                try: return ast.literal_eval(clean)
                 except: pass
             return None
             
@@ -227,23 +243,39 @@ def deduplicator_node(state: AgentState, config=None):
         content = response.content
         cleaned_triples = []
         
-        # Robust parsing
+        # Ultra-robust parsing for conversational LLMs
         def extract_json_data(text):
-            m = re.search(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
-            if m: text = m.group(1)
-            start, end = text.find('{'), text.rfind('}')
-            if start != -1 and end != -1:
-                try: return json.loads(text[start:end+1].replace("'", '"'))
+            # 1. Try finding by markdown blocks first
+            blocks = re.findall(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
+            # 2. If no blocks, use the whole text (handles cases where LLM omits markdown)
+            candidates = blocks if blocks else [text]
+            
+            for raw in candidates:
+                # Find outermost braces/brackets
+                s_brace, e_brace = raw.find('{'), raw.rfind('}')
+                s_bracket, e_bracket = raw.find('['), raw.rfind(']')
+                
+                # Determine which structure is most likely
+                if s_brace != -1 and (s_brace < s_bracket or s_bracket == -1):
+                    clean = raw[s_brace:e_brace+1]
+                elif s_bracket != -1:
+                    clean = raw[s_bracket:e_bracket+1]
+                else:
+                    continue
+
+                # Handle "Dirty JSON" (Common LLM hallucination: comments inside JSON)
+                # Remove common "(Inferred...)" or other text after numbers
+                clean = re.sub(r'(\d+\.?\d*)\s*\([^)]*\)', r'\1', clean)
+                # Replace single quotes with double quotes
+                clean = clean.replace("'", '"')
+                
+                # Try Strategy A: Standard JSON
+                try: return json.loads(clean)
                 except: pass
+                
+                # Try Strategy B: Python Literal Eval (handles missing quotes on keys etc)
                 import ast
-                try: return ast.literal_eval(text[start:end+1])
-                except: pass
-            start, end = text.find('['), text.rfind(']')
-            if start != -1 and end != -1:
-                try: return json.loads(text[start:end+1].replace("'", '"'))
-                except: pass
-                import ast
-                try: return ast.literal_eval(text[start:end+1])
+                try: return ast.literal_eval(clean)
                 except: pass
             return None
             
