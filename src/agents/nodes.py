@@ -270,7 +270,7 @@ def deduplicator_node(state: AgentState, config=None):
         return {"extracted_triples": extracted}
 
 from langchain_community.graphs import Neo4jGraph
-from langchain.chains import GraphCypherQAChain
+from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
 
 def query_node(state: AgentState, config=None):
     """Query the Neo4j graph using natural language and return an answer."""
