@@ -142,7 +142,7 @@ def extractor_node(state: AgentState, config=None):
                         subject=str(t.get('subject', 'Unknown')),
                         predicate=str(t.get('predicate', 'RELATED_TO')),
                         obj=str(t.get('obj', 'Unknown')),
-                        confidence=float(t.get('confidence', 0.8))
+                        confidence=float(t.get('confidence') if t.get('confidence') is not None else 1.0)
                     ))
         if not triples:
             print(f"  [Debug] LLM output parsing failed or 0 triples found. Raw output: {content.strip()}")
@@ -256,7 +256,7 @@ def deduplicator_node(state: AgentState, config=None):
                         subject=str(t.get('subject', 'Unknown')),
                         predicate=str(t.get('predicate', 'RELATED_TO')),
                         obj=str(t.get('obj', 'Unknown')),
-                        confidence=float(t.get('confidence', 0.8))
+                        confidence=float(t.get('confidence') if t.get('confidence') is not None else 1.0)
                     ))
         
         return {"extracted_triples": cleaned_triples}
