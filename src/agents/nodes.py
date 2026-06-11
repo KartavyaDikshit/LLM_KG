@@ -34,7 +34,7 @@ def load_domain_config(domain: str) -> Dict[str, Any]:
             "validator_instruction": "Validate triples."
         }
 
-def get_llm(model_type="gemini", model_name=None):
+def get_llm(model_type="ollama", model_name=None):
     """Factory to get the requested LLM."""
     try:
         if model_type == "gemini":
