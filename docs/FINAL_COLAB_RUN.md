@@ -35,7 +35,6 @@ for module_name in list(sys.modules.keys()):
 # 4. Install Dependencies
 print("📦 Installing required libraries...")
 !pip install langchain langchain-ollama langchain-community langgraph langchain-neo4j --quiet
-!pip install langchain-google-genai langchain-groq --quiet
 !pip install datasets pandas networkx pyvis requests pydantic tqdm tabulate PyYAML seaborn matplotlib neo4j --quiet
 
 # 5. Neo4j Credentials

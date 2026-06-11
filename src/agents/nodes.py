@@ -33,23 +33,12 @@ def load_domain_config(domain: str) -> Dict[str, Any]:
         }
 
 def get_llm(model_type="ollama", model_name=None):
-    """Factory to get the requested LLM with lazy imports."""
+    """Factory to get the local Ollama LLM. External APIs removed."""
     try:
-        if model_type == "gemini":
-            from langchain_google_genai import ChatGoogleGenerativeAI
-            name = model_name or "gemini-1.5-flash"
-            return ChatGoogleGenerativeAI(model=name, temperature=0)
-        elif model_type == "groq":
-            from langchain_groq import ChatGroq
-            name = model_name or "llama-3.1-70b-versatile"
-            return ChatGroq(model=name, temperature=0)
-        elif model_type == "ollama":
-            name = model_name or "llama3"
-            return ChatOllama(model=name, temperature=0)
-        else:
-            return ChatOllama(model="llama3", temperature=0)
+        name = model_name or "llama3"
+        return ChatOllama(model=name, temperature=0)
     except Exception as e:
-        print(f"LLM Initialization Error: {e}. Falling back to default Ollama.")
+        print(f"LLM Initialization Error: {e}. Falling back to default Ollama (llama3).")
         return ChatOllama(model="llama3", temperature=0)
 
 def planner_node(state: AgentState, config=None):
@@ -246,9 +235,15 @@ def deduplicator_node(state: AgentState, config=None):
             if start != -1 and end != -1:
                 try: return json.loads(text[start:end+1].replace("'", '"'))
                 except: pass
+                import ast
+                try: return ast.literal_eval(text[start:end+1])
+                except: pass
             start, end = text.find('['), text.rfind(']')
             if start != -1 and end != -1:
                 try: return json.loads(text[start:end+1].replace("'", '"'))
+                except: pass
+                import ast
+                try: return ast.literal_eval(text[start:end+1])
                 except: pass
             return None
             
