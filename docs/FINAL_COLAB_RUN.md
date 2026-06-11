@@ -28,7 +28,7 @@ if PROJECT_DIR not in sys.path:
 
 # 4. Install Dependencies
 print("📦 Installing required libraries...")
-!pip install langchain langchain-ollama langchain-community langgraph --quiet
+!pip install langchain langchain-ollama langchain-community langgraph langchain-neo4j --quiet
 !pip install langchain-google-genai langchain-groq --quiet
 !pip install datasets pandas networkx pyvis requests pydantic tqdm tabulate PyYAML seaborn matplotlib neo4j --quiet
 
@@ -39,9 +39,11 @@ NEO4J_PASSWORD = "mhsAd-D0AxO3eCWnoL5g1cH6jFEjDIxkkntomwHgWU8"
 
 # 6. Setup Ollama (Local LLM Engine)
 print("📥 Starting Ollama...")
-!sudo apt-get update && sudo apt-get install -y zstd
+os.system("pkill -9 ollama || true")
+time.sleep(2)
+!sudo apt-get update && sudo apt-get install -y zstd --quiet
 !curl -fsSL https://ollama.com/install.sh | sh
-subprocess.Popen(["ollama", "serve"])
+subprocess.Popen(["ollama", "serve"], cwd="/", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 time.sleep(15) # Wait for server to start
 !ollama pull llama3
 
@@ -51,6 +53,12 @@ print("\n✅ Environment is perfectly set up and synchronized with GitHub!")
 ## 2. Robust Extraction Loop
 ```python
 # @title Execution: Safe Multi-Agent Extraction & Neo4j Sync { vertical-output: true }
+import os, sys
+# Guard: Ensure we are always in the right folder
+PROJECT_DIR = '/content/LLM_KG'
+os.chdir(PROJECT_DIR)
+if PROJECT_DIR not in sys.path: sys.path.insert(0, PROJECT_DIR)
+
 from src.agents.graph import create_agentic_workflow
 from src.graph.milestone import MilestoneManager
 from src.graph.neo4j_manager import Neo4jManager
@@ -69,7 +77,7 @@ llm = ChatOllama(model=model_name, temperature=0)
 # Load Data (Stable Repository Path)
 print("⚖️ Loading Legal Dataset (BillSum)...")
 try:
-    legal_ds = load_dataset("fieri/billsum", split="train")
+    legal_ds = load_dataset("FiscalNote/billsum", split="train")
     corpus = legal_ds['text'][:20] # Scale to 20 documents
 except Exception as e:
     print(f"⚠️ Dataset load error: {e}. Using fallback corpus.")
@@ -109,19 +117,19 @@ else:
 ## 3. GraphRAG: Ask Natural Language Questions
 ```python
 # @title Query: Speak to your Knowledge Graph { vertical-output: true }
-from langchain_community.graphs import Neo4jGraph
-from langchain.chains import GraphCypherQAChain
+from langchain_neo4j import Neo4jGraph
+from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
 
 # Connect and Query
 try:
-    graph = Neo4jGraph(url=NEO4J_URI, username=NEO4J_USER, password=NEO4J_PASSWORD)
+    graph = Neo4jGraph(url=NEO4J_URI, username=NEO4J_USER, password=NEO4J_PASSWORD, database=None)
     chain = GraphCypherQAChain.from_llm(llm, graph=graph, verbose=True)
 
     # Example question based on extracted data
     query = "List the entities mentioned and describe their relationships."
     print(f"❓ Question: {query}")
     response = chain.invoke(query)
-    print(f"\n💡 Answer: {response['result']}")
+    print(f"\n💡 Answer: {response.get('result', response.get('query'))}")
 except Exception as e:
     print(f"⚠️ GraphRAG Query Error: {e}")
 ```
@@ -142,7 +150,11 @@ if not all_triples:
 else:
     G = nx.MultiDiGraph()
     for t in all_triples:
-        G.add_edge(t.subject, t.obj, label=t.predicate)
+        # Robust triple access (dict or object)
+        sub = t.subject if hasattr(t, 'subject') else t['subject']
+        obj = t.obj if hasattr(t, 'obj') else t['obj']
+        pred = t.predicate if hasattr(t, 'predicate') else t['predicate']
+        G.add_edge(sub, obj, label=pred)
 
     output_path = "data/processed/final_interactive_graph.html"
     visualize_graph(G, domain="medical", output_path=output_path)
