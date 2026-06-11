@@ -132,9 +132,15 @@ def extractor_node(state: AgentState, config=None):
             if start != -1 and end != -1:
                 try: return json.loads(text[start:end+1].replace("'", '"'))
                 except: pass
+                import ast
+                try: return ast.literal_eval(text[start:end+1])
+                except: pass
             start, end = text.find('['), text.rfind(']')
             if start != -1 and end != -1:
                 try: return json.loads(text[start:end+1].replace("'", '"'))
+                except: pass
+                import ast
+                try: return ast.literal_eval(text[start:end+1])
                 except: pass
             return None
             
@@ -149,6 +155,8 @@ def extractor_node(state: AgentState, config=None):
                         obj=str(t.get('obj', 'Unknown')),
                         confidence=float(t.get('confidence', 0.8))
                     ))
+        if not triples:
+            print(f"  [Debug] LLM output parsing failed or 0 triples found. Raw output: {content.strip()}")
         return {"extracted_triples": triples}
     except Exception as e:
         print(f"Extractor Node Error: {e}")
@@ -161,7 +169,8 @@ def validator_node(state: AgentState, config=None):
     
     extracted = state.get("extracted_triples", [])
     if not extracted:
-        return {"is_valid": False, "validation_feedback": "No triples found."}
+        # If the LLM legitimately found no triples, accept it and move on instead of looping 3 times
+        return {"is_valid": True, "validation_feedback": "Valid (empty)."}
 
     triples_text = "\n".join([f"{t.subject} - {t.predicate} -> {t.obj}" for t in extracted])
     

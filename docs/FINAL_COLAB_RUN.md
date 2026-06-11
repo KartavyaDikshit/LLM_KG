@@ -102,17 +102,6 @@ datasets_to_process = [
 processed = ms.get_processed_indices()
 print(f"🔍 Progress: {len(processed)} existing milestones. Resuming...")
 
-for domain, corpus in datasets_to_process:
-    print(f"\n🚀 Processing {len(corpus)} documents for domain: {domain.upper()}")
-    for idx, text in enumerate(corpus):
-        # We use a unique milestone ID for each domain to prevent overlaps
-        global_i = f"{domain}_{idx}" 
-
-        # Note: milestone manager currently expects integer IDs in the existing code,
-        # but if it's integer-only, we just use a global counter
-        pass
-
-# Wait, let's fix the milestone indexing to be a single global counter for simplicity
 global_i = 0
 for domain, corpus in datasets_to_process:
     print(f"\n🚀 Processing {len(corpus)} documents for domain: {domain.upper()}")
