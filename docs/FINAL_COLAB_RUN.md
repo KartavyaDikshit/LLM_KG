@@ -74,38 +74,65 @@ model_name = "llama3"
 domain = "legal"
 llm = ChatOllama(model=model_name, temperature=0)
 
-# Load Data (Stable Repository Path)
-print("⚖️ Loading Legal Dataset (BillSum)...")
+# 2. Load Datasets
+print("⚖️ Loading Datasets (Medical & Legal)...")
+
+# Legal Dataset
 try:
     legal_ds = load_dataset("FiscalNote/billsum", split="train")
-    corpus = legal_ds['text'][:20] # Scale to 20 documents
+    legal_corpus = legal_ds['text'][:10]
+    print(f"✅ Loaded {len(legal_corpus)} Legal documents.")
 except Exception as e:
-    print(f"⚠️ Dataset load error: {e}. Using fallback corpus.")
-    corpus = ["Company A agrees to pay Company B $5000 for consulting services under California law.", 
-              "The contract states that the supplier must deliver materials within 30 days.",
-              "This non-disclosure agreement binds the employee to keep all trade secrets confidential."] * 7
+    print(f"⚠️ Legal dataset error: {e}. Using fallback.")
+    legal_corpus = ["Company A agrees to pay Company B $5000 for consulting services under California law."] * 5
 
-# 1. RUN EXTRACTION WITH MILESTONES
+# Medical Dataset (Fallback to text for simplicity in demo)
+medical_corpus = [
+    "Patient diagnosed with Type 2 Diabetes, prescribed Metformin 500mg. Reports neuropathy in extremities.",
+    "Acute Respiratory Distress Syndrome secondary to viral pneumonia. Patient on ventilator support.",
+    "Subject has history of Stage IV Melanoma. Undergoing immunotherapy with Pembrolizumab."
+] * 3
+
+datasets_to_process = [
+    ("legal", legal_corpus),
+    ("medical", medical_corpus)
+]
+
+# 3. RUN EXTRACTION
 processed = ms.get_processed_indices()
-print(f"🔍 Progress: {len(processed)} documents already processed. Skipping to next...")
+print(f"🔍 Progress: {len(processed)} existing milestones. Resuming...")
 
-for i, text in enumerate(corpus):
-    if i in processed: continue 
-    
-    start_time = time.time()
-    try:
-        # Process first 2000 chars to avoid model context limits
-        res = workflow.invoke(
-            {"input_text": text[:2000], "domain": domain, "is_valid": False, "iterations": 0},
-            config={"configurable": {"llm": llm}}
-        )
-        triples = res.get("extracted_triples", [])
-        ms.save(i, triples, metadata={"model": model_name, "domain": domain})
-        
-        elapsed = time.time() - start_time
-        print(f"✅ Doc {i} completed in {elapsed:.2f}s | {len(triples)} triples extracted.")
-    except Exception as e:
-        print(f"⚠️ Error processing doc {i}: {e}. Skipping.")
+for domain, corpus in datasets_to_process:
+    print(f"\n🚀 Processing {len(corpus)} documents for domain: {domain.upper()}")
+    for idx, text in enumerate(corpus):
+        # We use a unique milestone ID for each domain to prevent overlaps
+        global_i = f"{domain}_{idx}" 
+
+        # Note: milestone manager currently expects integer IDs in the existing code,
+        # but if it's integer-only, we just use a global counter
+        pass
+
+# Wait, let's fix the milestone indexing to be a single global counter for simplicity
+global_i = 0
+for domain, corpus in datasets_to_process:
+    print(f"\n🚀 Processing {len(corpus)} documents for domain: {domain.upper()}")
+    for text in corpus:
+        if global_i in processed:
+            global_i += 1
+            continue 
+
+        try:
+            # Process first 2000 chars to avoid model context limits
+            res = workflow.invoke(
+                {"input_text": text[:2000], "domain": domain, "is_valid": False, "iterations": 0},
+                config={"configurable": {"llm": llm}}
+            )
+            triples = res.get("extracted_triples", [])
+            ms.save(global_i, triples, metadata={"model": "llama3", "domain": domain})
+            print(f"✅ Doc {global_i} ({domain}) processed. Extracted {len(triples)} triples.")
+        except Exception as e:
+            print(f"⚠️ Doc {global_i} ({domain}) failed: {e}. Moving on.")
+        global_i += 1
 
 # 2. SYNC TO NEO4J (Incremental Upload)
 print("\n🔗 Syncing all milestones to Neo4j persistence layer...")
