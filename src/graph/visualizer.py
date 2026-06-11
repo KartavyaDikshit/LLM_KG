@@ -46,6 +46,18 @@ def visualize_graph(nx_graph, domain="medical", output_path="data/processed/kg_v
     # Save with no local assets
     net.save_graph(output_path)
 
+def visualize_from_neo4j(neo4j_manager, domain="medical", output_path="data/processed/kg_visualization_neo4j.html"):
+    """
+    Pulls data from Neo4j and visualizes it.
+    """
+    nx_graph = nx.DiGraph()
+    with neo4j_manager.driver.session() as session:
+        result = session.run("MATCH (s)-[r]->(o) RETURN s.name as sub, type(r) as pred, o.name as obj")
+        for record in result:
+            nx_graph.add_edge(record["sub"], record["obj"], label=record["pred"])
+    
+    visualize_graph(nx_graph, domain, output_path)
+
 if __name__ == "__main__":
     # Test visualization
     test_graph = nx.DiGraph()

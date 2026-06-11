@@ -13,3 +13,4 @@ pydantic
 tqdm
 tabulate
 PyYAML
+neo4j

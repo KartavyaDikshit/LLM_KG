@@ -16,3 +16,5 @@ class AgentState(TypedDict):
     validation_feedback: Optional[str]
     is_valid: bool
     iterations: int
+    query: Optional[str]
+    answer: Optional[str]

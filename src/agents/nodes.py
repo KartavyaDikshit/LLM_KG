@@ -145,7 +145,7 @@ def extractor_node(state: AgentState, config=None):
         return {"extracted_triples": []}
 
 def validator_node(state: AgentState, config=None):
-    """Validate extracted triples against domain constraints."""
+    """Validate extracted triples against domain constraints and check for hallucinations."""
     domain_cfg = load_domain_config(state.get("domain", "medical"))
     llm = config.get("configurable", {}).get("llm", get_llm()) if config else get_llm()
     
@@ -157,12 +157,16 @@ def validator_node(state: AgentState, config=None):
     
     prompt = ChatPromptTemplate.from_template(
         "You are a {domain_name} ontology validator.\n"
-        "Evaluate these triples: {triples}\n\n"
-        "Rules:\n"
-        "- Entities: {entity_types}\n"
-        "- Relations: {allowed_predicates}\n\n"
-        "Text: {note}\n\n"
-        "Reply 'PASSED' if correct. Otherwise provide instructions."
+        "Review the following extracted triples based on the input text and domain ontology.\n\n"
+        "Input Text: {note}\n"
+        "Ontology Entity Types: {entity_types}\n"
+        "Ontology Allowed Relations: {allowed_predicates}\n\n"
+        "Extracted Triples:\n{triples}\n\n"
+        "Task:\n"
+        "1. Identify any triples that are NOT supported by the text (hallucinations).\n"
+        "2. Identify any triples that violate the ontology constraints.\n"
+        "3. If all triples are valid and grounded in text, reply exactly with 'PASSED'.\n"
+        "4. Otherwise, provide specific feedback for the extractor to fix the errors."
     )
     
     try:
@@ -183,3 +187,87 @@ def validator_node(state: AgentState, config=None):
     except Exception as e:
         print(f"Validator Node Error: {e}")
         return {"is_valid": True, "validation_feedback": None}
+
+def deduplicator_node(state: AgentState, config=None):
+    """Normalize and deduplicate entities in the extracted triples."""
+    llm = config.get("configurable", {}).get("llm", get_llm()) if config else get_llm()
+    extracted = state.get("extracted_triples", [])
+    if not extracted:
+        return {"extracted_triples": []}
+
+    triples_text = "\n".join([f"{t.subject} - {t.predicate} -> {t.obj}" for t in extracted])
+    
+    prompt = ChatPromptTemplate.from_template(
+        "You are a knowledge graph entity normalizer.\n"
+        "Input Triples:\n{triples}\n\n"
+        "Task:\n"
+        "1. Normalize entity names (e.g., 'T2D' -> 'Type 2 Diabetes', 'MI' -> 'Myocardial Infarction').\n"
+        "2. Ensure consistent casing and naming conventions.\n"
+        "3. Output the cleaned triples in the same JSON format.\n\n"
+        "Format Instructions: {format_instr}"
+    )
+    
+    json_example = 'Output MUST be valid JSON with key "triples" containing a list of objects with "subject", "predicate", "obj", and "confidence".'
+    
+    try:
+        chain = prompt | llm
+        response = chain.invoke({
+            "triples": triples_text,
+            "format_instr": json_example
+        })
+        
+        content = response.content
+        cleaned_triples = []
+        match = re.search(r'({.*}|\[.*\])', content, re.DOTALL)
+        if match:
+            raw_json = match.group(0).replace("'", '"')
+            try:
+                data = json.loads(raw_json)
+                result_list = data.get('triples', []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
+                for t in result_list:
+                    if isinstance(t, dict):
+                        cleaned_triples.append(Triple(
+                            subject=str(t.get('subject', 'Unknown')),
+                            predicate=str(t.get('predicate', 'RELATED_TO')),
+                            obj=str(t.get('obj', 'Unknown')),
+                            confidence=float(t.get('confidence', 0.8))
+                        ))
+            except: pass
+        
+        return {"extracted_triples": cleaned_triples}
+    except Exception as e:
+        print(f"Deduplicator Node Error: {e}")
+        return {"extracted_triples": extracted}
+
+from langchain_community.graphs import Neo4jGraph
+from langchain.chains import GraphCypherQAChain
+
+def query_node(state: AgentState, config=None):
+    """Query the Neo4j graph using natural language and return an answer."""
+    llm = config.get("configurable", {}).get("llm", get_llm()) if config else get_llm()
+    query = state.get("query")
+    
+    if not query:
+        return {"answer": "No query provided."}
+    
+    try:
+        # Initialize graph connection
+        graph = Neo4jGraph(
+            url=os.getenv("NEO4J_URI", "bolt://localhost:7687"),
+            username=os.getenv("NEO4J_USER", "neo4j"),
+            password=os.getenv("NEO4J_PASSWORD", "password")
+        )
+        
+        # Build QA Chain
+        chain = GraphCypherQAChain.from_llm(
+            llm=llm,
+            graph=graph,
+            verbose=True,
+            allow_dangerous_requests=True # Required for Cypher execution in newer LC versions
+        )
+        
+        response = chain.invoke({"query": query})
+        return {"answer": response.get("result", "I couldn't find an answer in the graph.")}
+    except Exception as e:
+        print(f"Query Node Error: {e}")
+        return {"answer": f"Error querying graph: {str(e)}"}
