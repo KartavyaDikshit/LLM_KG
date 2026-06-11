@@ -123,22 +123,32 @@ def extractor_node(state: AgentState, config=None):
         
         content = response.content
         triples = []
+        
         # Robust parsing
-        match = re.search(r'({.*}|\[.*\])', content, re.DOTALL)
-        if match:
-            raw_json = match.group(0).replace("'", '"')
-            try:
-                data = json.loads(raw_json)
-                result_list = data.get('triples', []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
-                for t in result_list:
-                    if isinstance(t, dict):
-                        triples.append(Triple(
-                            subject=str(t.get('subject', 'Unknown')),
-                            predicate=str(t.get('predicate', 'RELATED_TO')),
-                            obj=str(t.get('obj', 'Unknown')),
-                            confidence=float(t.get('confidence', 0.8))
-                        ))
-            except: pass
+        def extract_json_data(text):
+            m = re.search(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
+            if m: text = m.group(1)
+            start, end = text.find('{'), text.rfind('}')
+            if start != -1 and end != -1:
+                try: return json.loads(text[start:end+1].replace("'", '"'))
+                except: pass
+            start, end = text.find('['), text.rfind(']')
+            if start != -1 and end != -1:
+                try: return json.loads(text[start:end+1].replace("'", '"'))
+                except: pass
+            return None
+            
+        data = extract_json_data(content)
+        if data:
+            result_list = data.get('triples', []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
+            for t in result_list:
+                if isinstance(t, dict):
+                    triples.append(Triple(
+                        subject=str(t.get('subject', 'Unknown')),
+                        predicate=str(t.get('predicate', 'RELATED_TO')),
+                        obj=str(t.get('obj', 'Unknown')),
+                        confidence=float(t.get('confidence', 0.8))
+                    ))
         return {"extracted_triples": triples}
     except Exception as e:
         print(f"Extractor Node Error: {e}")
@@ -218,21 +228,32 @@ def deduplicator_node(state: AgentState, config=None):
         
         content = response.content
         cleaned_triples = []
-        match = re.search(r'({.*}|\[.*\])', content, re.DOTALL)
-        if match:
-            raw_json = match.group(0).replace("'", '"')
-            try:
-                data = json.loads(raw_json)
-                result_list = data.get('triples', []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
-                for t in result_list:
-                    if isinstance(t, dict):
-                        cleaned_triples.append(Triple(
-                            subject=str(t.get('subject', 'Unknown')),
-                            predicate=str(t.get('predicate', 'RELATED_TO')),
-                            obj=str(t.get('obj', 'Unknown')),
-                            confidence=float(t.get('confidence', 0.8))
-                        ))
-            except: pass
+        
+        # Robust parsing
+        def extract_json_data(text):
+            m = re.search(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
+            if m: text = m.group(1)
+            start, end = text.find('{'), text.rfind('}')
+            if start != -1 and end != -1:
+                try: return json.loads(text[start:end+1].replace("'", '"'))
+                except: pass
+            start, end = text.find('['), text.rfind(']')
+            if start != -1 and end != -1:
+                try: return json.loads(text[start:end+1].replace("'", '"'))
+                except: pass
+            return None
+            
+        data = extract_json_data(content)
+        if data:
+            result_list = data.get('triples', []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
+            for t in result_list:
+                if isinstance(t, dict):
+                    cleaned_triples.append(Triple(
+                        subject=str(t.get('subject', 'Unknown')),
+                        predicate=str(t.get('predicate', 'RELATED_TO')),
+                        obj=str(t.get('obj', 'Unknown')),
+                        confidence=float(t.get('confidence', 0.8))
+                    ))
         
         return {"extracted_triples": cleaned_triples}
     except Exception as e:

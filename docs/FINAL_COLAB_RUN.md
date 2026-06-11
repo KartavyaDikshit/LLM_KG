@@ -71,7 +71,7 @@ ms = MilestoneManager()
 neo = Neo4jManager(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
 workflow = create_agentic_workflow()
 model_name = "llama3"
-domain = "medical"
+domain = "legal"
 llm = ChatOllama(model=model_name, temperature=0)
 
 # Load Data (Stable Repository Path)
@@ -81,7 +81,9 @@ try:
     corpus = legal_ds['text'][:20] # Scale to 20 documents
 except Exception as e:
     print(f"⚠️ Dataset load error: {e}. Using fallback corpus.")
-    corpus = ["Patient has history of Stage IV Melanoma. Treatment includes Pembrolizumab."] * 10
+    corpus = ["Company A agrees to pay Company B $5000 for consulting services under California law.", 
+              "The contract states that the supplier must deliver materials within 30 days.",
+              "This non-disclosure agreement binds the employee to keep all trade secrets confidential."] * 7
 
 # 1. RUN EXTRACTION WITH MILESTONES
 processed = ms.get_processed_indices()
@@ -157,7 +159,7 @@ else:
         G.add_edge(sub, obj, label=pred)
 
     output_path = "data/processed/final_interactive_graph.html"
-    visualize_graph(G, domain="medical", output_path=output_path)
+    visualize_graph(G, domain="legal", output_path=output_path)
 
     # Display in Notebook
     with open(output_path, 'r') as f: html = f.read()
