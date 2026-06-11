@@ -58,11 +58,19 @@ print("\n✅ Environment is perfectly set up and synchronized with GitHub!")
 ## 2. Robust Extraction Loop
 ```python
 # @title Execution: Safe Multi-Agent Extraction & Neo4j Sync { vertical-output: true }
-import os, sys
+import os, sys, subprocess
 # Guard: Ensure we are always in the right folder
 PROJECT_DIR = '/content/LLM_KG'
 os.chdir(PROJECT_DIR)
 if PROJECT_DIR not in sys.path: sys.path.insert(0, PROJECT_DIR)
+
+# 1. Hardware Speed Check
+try:
+    gpu_check = subprocess.check_output("nvidia-smi", shell=True).decode()
+    print("🚀 NVIDIA GPU Detected! Extraction will be fast.")
+except:
+    print("⚠️ WARNING: No NVIDIA GPU detected. TPU/CPU mode is 10x slower for Ollama.")
+    print("💡 Tip: Change runtime to 'T4 GPU' or 'L4 GPU' for better performance.")
 
 from src.agents.graph import create_agentic_workflow
 from src.graph.milestone import MilestoneManager
@@ -74,9 +82,9 @@ import time
 # Initialize
 ms = MilestoneManager()
 neo = Neo4jManager(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
-workflow = create_agentic_workflow()
+# FAST MODE: Bypasses planner/validator for speed on CPU/TPU
+workflow = create_agentic_workflow(fast_mode=True)
 model_name = "llama3"
-domain = "legal"
 llm = ChatOllama(model=model_name, temperature=0)
 
 # 2. Load Datasets
@@ -91,7 +99,7 @@ except Exception as e:
     print(f"⚠️ Legal dataset error: {e}. Using fallback.")
     legal_corpus = ["Company A agrees to pay Company B $5000 for consulting services under California law."] * 5
 
-# Medical Dataset (Fallback to text for simplicity in demo)
+# Medical Dataset
 medical_corpus = [
     "Patient diagnosed with Type 2 Diabetes, prescribed Metformin 500mg. Reports neuropathy in extremities.",
     "Acute Respiratory Distress Syndrome secondary to viral pneumonia. Patient on ventilator support.",
@@ -116,9 +124,9 @@ for domain, corpus in datasets_to_process:
             continue 
 
         try:
-            # Process first 2000 chars to avoid model context limits
+            # Reduced to 1000 chars for extreme speed-up
             res = workflow.invoke(
-                {"input_text": text[:2000], "domain": domain, "is_valid": False, "iterations": 0},
+                {"input_text": text[:1000], "domain": domain, "is_valid": False, "iterations": 0},
                 config={"configurable": {"llm": llm}}
             )
             triples = res.get("extracted_triples", [])
