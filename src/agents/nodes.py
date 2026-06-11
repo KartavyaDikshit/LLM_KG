@@ -3,8 +3,6 @@ import json
 import re
 import yaml
 from typing import List, Dict, Any
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_groq import ChatGroq
 try:
     from langchain_ollama import ChatOllama
 except ImportError:
@@ -35,12 +33,14 @@ def load_domain_config(domain: str) -> Dict[str, Any]:
         }
 
 def get_llm(model_type="ollama", model_name=None):
-    """Factory to get the requested LLM."""
+    """Factory to get the requested LLM with lazy imports."""
     try:
         if model_type == "gemini":
+            from langchain_google_genai import ChatGoogleGenerativeAI
             name = model_name or "gemini-1.5-flash"
             return ChatGoogleGenerativeAI(model=name, temperature=0)
         elif model_type == "groq":
+            from langchain_groq import ChatGroq
             name = model_name or "llama-3.1-70b-versatile"
             return ChatGroq(model=name, temperature=0)
         elif model_type == "ollama":

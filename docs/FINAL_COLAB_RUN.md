@@ -18,13 +18,19 @@ if os.path.exists(PROJECT_DIR):
 print("📥 Cloning the latest 'Next Level' codebase from GitHub...")
 !git clone https://github.com/KartavyaDikshit/LLM_KG.git
 
-# 3. Path Verification
+# 3. Path Verification & Module Reload (CRITICAL for Colab re-runs)
 if not os.path.exists(f"{PROJECT_DIR}/src"):
     raise Exception("❌ ERROR: Git clone failed. Please check your internet connection and repository URL.")
 
 %cd {PROJECT_DIR}
 if PROJECT_DIR not in sys.path:
     sys.path.insert(0, PROJECT_DIR)
+
+# Force reload modules to pick up changes after clone
+import importlib
+for module_name in list(sys.modules.keys()):
+    if module_name.startswith('src.'):
+        del sys.modules[module_name]
 
 # 4. Install Dependencies
 print("📦 Installing required libraries...")
