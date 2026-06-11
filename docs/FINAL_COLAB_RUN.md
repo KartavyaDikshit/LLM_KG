@@ -50,149 +50,127 @@ time.sleep(2)
 !curl -fsSL https://ollama.com/install.sh | sh
 subprocess.Popen(["ollama", "serve"], cwd="/", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 time.sleep(15) # Wait for server to start
-!ollama pull llama3
 
-print("\n✅ Environment is perfectly set up and synchronized with GitHub!")
+# Pull ALL models for benchmarking
+models_to_pull = ["llama3", "mistral", "gemma2"]
+for m in models_to_pull:
+    print(f"📥 Pulling {m}...")
+    !ollama pull {m}
+
+print("\n✅ Environment is perfectly set up with 3 models ready for benchmarking!")
 ```
 
-## 2. Robust Extraction Loop
+## 2. Multi-Model Benchmark (Legal & Medical)
 ```python
-# @title Execution: Safe Multi-Agent Extraction & Neo4j Sync { vertical-output: true }
-import os, sys, subprocess
-# Guard: Ensure we are always in the right folder
-PROJECT_DIR = '/content/LLM_KG'
-os.chdir(PROJECT_DIR)
-if PROJECT_DIR not in sys.path: sys.path.insert(0, PROJECT_DIR)
-
-# 1. Hardware Speed Check
-try:
-    gpu_check = subprocess.check_output("nvidia-smi", shell=True).decode()
-    print("🚀 NVIDIA GPU Detected! Extraction will be fast.")
-except:
-    print("⚠️ WARNING: No NVIDIA GPU detected. TPU/CPU mode is 10x slower for Ollama.")
-    print("💡 Tip: Change runtime to 'T4 GPU' or 'L4 GPU' for better performance.")
-
+# @title Execution: Multi-Model Benchmark & Analytics { vertical-output: true }
+import os, sys, time, pandas as pd
+from tabulate import tabulate
 from src.agents.graph import create_agentic_workflow
 from src.graph.milestone import MilestoneManager
 from src.graph.neo4j_manager import Neo4jManager
 from langchain_ollama import ChatOllama
 from datasets import load_dataset
-import time
+import networkx as nx
 
 # Initialize
 ms = MilestoneManager()
 neo = Neo4jManager(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
-# FULL PIPELINE: Using all agents (Planner, Extractor, Validator, Deduplicator)
 workflow = create_agentic_workflow()
-model_name = "llama3"
-llm = ChatOllama(model=model_name, temperature=0)
+benchmark_results = []
 
-# 2. Load Datasets
-print("⚖️ Loading Datasets (Medical & Legal)...")
-
-# Legal Dataset
+# 1. LOAD DATASETS
+print("⚖️ Loading Datasets...")
+legal_corpus = []
 try:
     legal_ds = load_dataset("FiscalNote/billsum", split="train")
-    legal_corpus = legal_ds['text'][:10]
-    print(f"✅ Loaded {len(legal_corpus)} Legal documents.")
-except Exception as e:
-    print(f"⚠️ Legal dataset error: {e}. Using fallback.")
-    legal_corpus = ["Company A agrees to pay Company B $5000 for consulting services under California law."] * 5
+    legal_corpus = legal_ds['text'][:3] # Small sample for benchmark speed
+except:
+    legal_corpus = ["Company A agrees to pay Company B $5000 for consulting."] * 3
 
-# Medical Dataset
 medical_corpus = [
-    "Patient diagnosed with Type 2 Diabetes, prescribed Metformin 500mg. Reports neuropathy in extremities.",
-    "Acute Respiratory Distress Syndrome secondary to viral pneumonia. Patient on ventilator support.",
-    "Subject has history of Stage IV Melanoma. Undergoing immunotherapy with Pembrolizumab."
-] * 3
-
-datasets_to_process = [
-    ("legal", legal_corpus),
-    ("medical", medical_corpus)
+    "Patient diagnosed with Type 2 Diabetes, prescribed Metformin 500mg.",
+    "Acute Respiratory Distress Syndrome secondary to viral pneumonia.",
+    "Subject has history of Stage IV Melanoma. Undergoing immunotherapy."
 ]
 
-# 3. RUN EXTRACTION
-processed = ms.get_processed_indices()
-print(f"🔍 Progress: {len(processed)} existing milestones. Resuming...")
+# 2. RUN BENCHMARK
+test_models = ["llama3", "mistral", "gemma2"]
+domains = [("legal", legal_corpus), ("medical", medical_corpus)]
 
-global_i = 0
-for domain, corpus in datasets_to_process:
-    print(f"\n🚀 Processing {len(corpus)} documents for domain: {domain.upper()}")
-    for text in corpus:
-        if global_i in processed:
-            global_i += 1
-            continue 
+for model_name in test_models:
+    print(f"\n🚀 Benchmarking Model: {model_name.upper()}")
+    llm = ChatOllama(model=model_name, temperature=0)
+    
+    for domain, corpus in domains:
+        print(f"  - Domain: {domain}")
+        start_time = time.time()
+        domain_triples = 0
+        
+        for i, text in enumerate(corpus):
+            try:
+                res = workflow.invoke(
+                    {"input_text": text[:1500], "domain": domain, "is_valid": False, "iterations": 0},
+                    config={"configurable": {"llm": llm}}
+                )
+                triples = res.get("extracted_triples", [])
+                domain_triples += len(triples)
+                # Save only Llama3 to Neo4j to keep graph clean
+                if model_name == "llama3":
+                    ms.save(f"{model_name}_{domain}_{i}", triples)
+            except Exception as e:
+                print(f"    ⚠️ Doc {i} failed: {e}")
+        
+        elapsed = time.time() - start_time
+        benchmark_results.append({
+            "Model": model_name,
+            "Domain": domain,
+            "Triples": domain_triples,
+            "Avg Time/Doc": f"{elapsed/len(corpus):.1f}s",
+            "Efficiency": f"{domain_triples/elapsed:.2f} T/s"
+        })
 
-        try:
-            # Full 2000 char processing for high-density extraction
-            res = workflow.invoke(
-                {"input_text": text[:2000], "domain": domain, "is_valid": False, "iterations": 0},
-                config={"configurable": {"llm": llm}}
-            )
-            triples = res.get("extracted_triples", [])
-            ms.save(global_i, triples, metadata={"model": "llama3", "domain": domain})
-            print(f"✅ Doc {global_i} ({domain}) processed. Extracted {len(triples)} triples.")
-        except Exception as e:
-            print(f"⚠️ Doc {global_i} ({domain}) failed: {e}. Moving on.")
-        global_i += 1
+# 3. DISPLAY METRICS
+print("\n📊 FINAL PERFORMANCE METRICS")
+df = pd.DataFrame(benchmark_results)
+print(tabulate(df, headers='keys', tablefmt='psql'))
+```
 
-# 2. SYNC TO NEO4J (Incremental Upload)
-print("\n🔗 Syncing all milestones to Neo4j persistence layer...")
+## 3. Persistent Graph Sync
+```python
+# @title Sync: Upload High-Recall Data to Neo4j { vertical-output: true }
+print("🔗 Syncing Llama3 milestones to Neo4j persistence layer...")
 all_triples = ms.get_all_triples()
 if all_triples:
     neo.upload_triples(all_triples)
+    print(f"✅ Successfully synced {len(all_triples)} triples.")
 else:
-    print("❌ No triples available to sync. Please run extraction first.")
+    print("❌ No data to sync.")
 ```
 
-## 3. GraphRAG: Ask Natural Language Questions
+## 4. Visualizing the Global Knowledge Graph
 ```python
-# @title Query: Speak to your Knowledge Graph { vertical-output: true }
-from langchain_neo4j import Neo4jGraph
-from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
-
-# Connect and Query
-try:
-    graph = Neo4jGraph(url=NEO4J_URI, username=NEO4J_USER, password=NEO4J_PASSWORD, database=None)
-    chain = GraphCypherQAChain.from_llm(llm, graph=graph, verbose=True)
-
-    # Example question based on extracted data
-    query = "List the entities mentioned and describe their relationships."
-    print(f"❓ Question: {query}")
-    response = chain.invoke(query)
-    print(f"\n💡 Answer: {response.get('result', response.get('query'))}")
-except Exception as e:
-    print(f"⚠️ GraphRAG Query Error: {e}")
-```
-
-## 4. Visualizing Persistent Data
-```python
-# @title Visualization: Interactive Knowledge Graph { vertical-output: true }
-import networkx as nx
+# @title Visualization: Multi-Domain Interactive View { vertical-output: true }
 from src.graph.visualizer import visualize_graph
+import networkx as nx
 from IPython.display import HTML, display
 import base64
 
-# Reconstruct from Milestones for stability
+# Combine all domain data for the visual
 all_triples = ms.get_all_triples()
+G = nx.MultiDiGraph()
 
-if not all_triples:
-    print("❌ No data to visualize. Complete a processing run first.")
-else:
-    G = nx.MultiDiGraph()
-    for t in all_triples:
-        # Robust triple access (dict or object)
-        sub = t.subject if hasattr(t, 'subject') else t['subject']
-        obj = t.obj if hasattr(t, 'obj') else t['obj']
-        pred = t.predicate if hasattr(t, 'predicate') else t['predicate']
-        G.add_edge(sub, obj, label=pred)
+for t in all_triples:
+    sub = t.subject if hasattr(t, 'subject') else t['subject']
+    obj = t.obj if hasattr(t, 'obj') else t['obj']
+    pred = t.predicate if hasattr(t, 'predicate') else t['predicate']
+    G.add_edge(sub, obj, label=pred)
 
-    output_path = "data/processed/final_interactive_graph.html"
-    visualize_graph(G, domain="legal", output_path=output_path)
+output_path = "data/processed/final_interactive_graph.html"
+# Using 'medical' theme as default for visual styling
+visualize_graph(G, domain="medical", output_path=output_path)
 
-    # Display in Notebook
-    with open(output_path, 'r') as f: html = f.read()
-    b64 = base64.b64encode(html.encode()).decode()
-    display(HTML(f'<h3>🔍 Interactive View (Recovered from Milestone Storage)</h3>'
-                 f'<iframe src="data:text/html;base64,{b64}" width="100%" height="650px" style="border:none;"></iframe>'))
+with open(output_path, 'r') as f: html = f.read()
+b64 = base64.b64encode(html.encode()).decode()
+display(HTML(f'<h3>🔍 Combined Knowledge Graph (Legal + Medical)</h3>'
+             f'<iframe src="data:text/html;base64,{b64}" width="100%" height="700px" style="border:none;"></iframe>'))
 ```
