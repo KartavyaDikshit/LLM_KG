@@ -1,144 +1,67 @@
- 🚀 Model: llama3 | Domain: medical
+ shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+fatal: could not create work tree dir 'LLM_KG': No such file or directory
+[Errno 2] No such file or directory: '/content/LLM_KG'
+/content/LLM_KG
+📦 Installing Robust Stack...
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+The folder you are executing pip from can no longer be found.
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+The folder you are executing pip from can no longer be found.
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+The folder you are executing pip from can no longer be found.
+📥 Starting Ollama...
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+Hit:1 https://cli.github.com/packages stable InRelease
+Hit:2 https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/ InRelease
+Hit:3 http://security.ubuntu.com/ubuntu jammy-security InRelease
+Hit:4 http://archive.ubuntu.com/ubuntu jammy InRelease
+Hit:5 https://r2u.stat.illinois.edu/ubuntu jammy InRelease
+Hit:6 http://archive.ubuntu.com/ubuntu jammy-updates InRelease
+Hit:7 https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu jammy InRelease
+Hit:8 http://archive.ubuntu.com/ubuntu jammy-backports InRelease
+Hit:9 https://ppa.launchpadcontent.net/ubuntugis/ppa/ubuntu jammy InRelease
+Reading package lists... Done
+W: Skipping acquire of configured file 'main/source/Sources' as repository 'https://r2u.stat.illinois.edu/ubuntu jammy InRelease' does not seem to provide it (sources.list entry misspelt?)
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+zstd is already the newest version (1.4.8+dfsg-3build1).
+0 upgraded, 0 newly installed, 0 to remove and 29 not upgraded.
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+sh: 0: getcwd() failed: No such file or directory
+>>> Cleaning up old version at /usr/local/lib/ollama
+>>> Installing ollama to /usr/local
+>>> Downloading ollama-linux-amd64.tar.zst
+######################################################################## 100.0%
+>>> Adding ollama user to video group...
+>>> Adding current user to ollama group...
+>>> Creating ollama systemd service...
+WARNING: systemd is not running
+WARNING: Unable to detect NVIDIA/AMD GPU. Install lspci or lshw to automatically detect and install GPU dependencies.
+>>> The Ollama API is now available at 127.0.0.1:11434.
+>>> Install complete. Run "ollama" from the command line.
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+
+✅ Environment Ready!
 ---------------------------------------------------------------------------
-KeyError                                  Traceback (most recent call last)
-/tmp/ipykernel_6282/2041565240.py in <cell line: 0>()
-     20 
-     21         for text in texts:
----> 22             res = workflow.invoke(
-     23                 {"input_text": text, "domain": domain, "is_valid": False, "iterations": 0},
-     24                 config={"configurable": {"llm": llm}}
+ModuleNotFoundError                       Traceback (most recent call last)
+/tmp/ipykernel_344/1564470443.py in <cell line: 0>()
+     40 # @title Execution: Multi-Agent Extraction & Neo4j Sync { vertical-output: true }
+     41 from src.agents.graph import create_agentic_workflow
+---> 42 from src.graph.milestone import MilestoneManager
+     43 from src.graph.neo4j_manager import Neo4jManager
+     44 from langchain_ollama import ChatOllama
 
-18 frames/usr/local/lib/python3.12/dist-packages/langgraph/pregel/main.py in invoke(self, input, config, context, stream_mode, print_mode, output_keys, interrupt_before, interrupt_after, durability, control, version, **kwargs)
-   3878         else:
-   3879             # v1: collect interrupts from updates stream
--> 3880             for chunk in self.stream(
-   3881                 input,
-   3882                 config,
+ModuleNotFoundError: No module named 'src.graph'
 
-/usr/local/lib/python3.12/dist-packages/langgraph/pregel/main.py in stream(self, input, config, context, stream_mode, print_mode, output_keys, interrupt_before, interrupt_after, durability, control, subgraphs, debug, version, **kwargs)
-   2934                     for task in loop.match_cached_writes():
-   2935                         loop.output_writes(task.id, task.writes, cached=True)
--> 2936                     for _ in runner.tick(
-   2937                         [t for t in loop.tasks.values() if not t.writes],
-   2938                         timeout=self.step_timeout,
+---------------------------------------------------------------------------
+NOTE: If your import is failing due to a missing package, you can
+manually install dependencies using either !pip or !apt.
 
-/usr/local/lib/python3.12/dist-packages/langgraph/pregel/_runner.py in tick(self, tasks, reraise, timeout, retry_policy, get_waiter, schedule_task)
-    205             scheduled_error_handler = False
-    206             try:
---> 207                 run_with_retry(
-    208                     t,
-    209                     retry_policy,
-
-/usr/local/lib/python3.12/dist-packages/langgraph/pregel/_retry.py in run_with_retry(task, retry_policy, configurable)
-    583             task.writes.clear()
-    584             # run the task
---> 585             return task.proc.invoke(task.input, config)
-    586         except ParentCommand as exc:
-    587             ns: str = config[CONF][CONFIG_KEY_CHECKPOINT_NS]
-
-/usr/local/lib/python3.12/dist-packages/langgraph/_internal/_runnable.py in invoke(self, input, config, **kwargs)
-    682                     # run in context
-    683                     with set_config_context(config, run) as context:
---> 684                         input = context.run(step.invoke, input, config, **kwargs)
-    685                 else:
-    686                     input = step.invoke(input, config)
-
-/usr/local/lib/python3.12/dist-packages/langgraph/_internal/_runnable.py in invoke(self, input, config, **kwargs)
-    424                 run_manager.on_chain_end(ret)
-    425         else:
---> 426             ret = self.func(*args, **kwargs)
-    427         if self.recurse and isinstance(ret, Runnable):
-    428             return ret.invoke(input, config)
-
-/content/LLM_KG/src/agents/nodes.py in extractor_node(state, config)
-     33         "Format: {{\"triples\": [{{\"subject\": \"\", \"predicate\": \"\", \"obj\": \"\", \"confidence\": 1.0}}]}}\n\n"
-     34         "Text: {text}"
----> 35     )
-     36     chain = prompt | llm
-     37     res = chain.invoke({
-
-/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/chat.py in format(self, **kwargs)
-    707             Formatted string.
-    708         """
---> 709         return self.format_prompt(**kwargs).to_string()
-    710 
-    711     async def aformat(self, **kwargs: Any) -> str:
-
-/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/chat.py in format_prompt(self, **kwargs)
-    729             **kwargs: Keyword arguments to use for formatting.
-    730         """
---> 731         messages = self.format_messages(**kwargs)
-    732         return ChatPromptValue(messages=messages)
-    733 
-
-/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/chat.py in format_messages(self, **kwargs)
-   1189                 message_template, (BaseMessagePromptTemplate, BaseChatPromptTemplate)
-   1190             ):
--> 1191                 message = message_template.format_messages(**kwargs)
-   1192                 result.extend(message)
-   1193             else:
-
-/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/chat.py in format_messages(self, **kwargs)
-    559             List of `BaseMessage` objects.
-    560         """
---> 561         return [self.format(**kwargs)]
-    562 
-    563     async def aformat_messages(self, **kwargs: Any) -> list[BaseMessage]:
-
-/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/chat.py in format(self, **kwargs)
-    592         """
-    593         if isinstance(self.prompt, StringPromptTemplate):
---> 594             text = self.prompt.format(**kwargs)
-    595             return self._msg_class(
-    596                 content=text, additional_kwargs=self.additional_kwargs
-
-/usr/local/lib/python3.12/dist-packages/langchain_core/prompts/prompt.py in format(self, **kwargs)
-    199         """
-    200         kwargs = self._merge_partial_and_user_variables(**kwargs)
---> 201         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
-    202 
-    203     @classmethod
-
-/usr/lib/python3.12/string.py in format(self, format_string, *args, **kwargs)
-    188 class Formatter:
-    189     def format(self, format_string, /, *args, **kwargs):
---> 190         return self.vformat(format_string, args, kwargs)
-    191 
-    192     def vformat(self, format_string, args, kwargs):
-
-/usr/local/lib/python3.12/dist-packages/langchain_core/utils/formatting.py in vformat(self, format_string, args, kwargs)
-     46             )
-     47             raise ValueError(msg)
----> 48         return super().vformat(format_string, args, kwargs)
-     49 
-     50     def validate_input_variables(
-
-/usr/lib/python3.12/string.py in vformat(self, format_string, args, kwargs)
-    192     def vformat(self, format_string, args, kwargs):
-    193         used_args = set()
---> 194         result, _ = self._vformat(format_string, args, kwargs, used_args, 2)
-    195         self.check_unused_args(used_args, args, kwargs)
-    196         return result
-
-/usr/lib/python3.12/string.py in _vformat(self, format_string, args, kwargs, used_args, recursion_depth, auto_arg_index)
-    232                 # given the field_name, find the object it references
-    233                 #  and the argument it came from
---> 234                 obj, arg_used = self.get_field(field_name, args, kwargs)
-    235                 used_args.add(arg_used)
-    236 
-
-/usr/lib/python3.12/string.py in get_field(self, field_name, args, kwargs)
-    297         first, rest = _string.formatter_field_name_split(field_name)
-    298 
---> 299         obj = self.get_value(first, args, kwargs)
-    300 
-    301         # loop through the rest of the field_name, doing
-
-/usr/lib/python3.12/string.py in get_value(self, key, args, kwargs)
-    254             return args[key]
-    255         else:
---> 256             return kwargs[key]
-    257 
-    258 
-
-KeyError: "'subject'"
+To view examples of installing some common dependencies, click the
+"Open Examples" button below.
+---------------------------------------------------------------------------
+Open Examples
