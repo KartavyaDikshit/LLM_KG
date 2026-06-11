@@ -1,28 +1,24 @@
- shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
-fatal: could not create work tree dir 'LLM_KG': No such file or directory
-[Errno 2] No such file or directory: '/content/LLM_KG'
+ 📥 Cloning the latest 'Next Level' codebase from GitHub...
+Cloning into 'LLM_KG'...
+remote: Enumerating objects: 254, done.
+remote: Counting objects: 100% (254/254), done.
+remote: Compressing objects: 100% (185/185), done.
+remote: Total 254 (delta 126), reused 190 (delta 62), pack-reused 0 (from 0)
+Receiving objects: 100% (254/254), 453.35 KiB | 3.38 MiB/s, done.
+Resolving deltas: 100% (126/126), done.
 /content/LLM_KG
-📦 Installing Robust Stack...
-shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
-shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
-The folder you are executing pip from can no longer be found.
-shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
-shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
-The folder you are executing pip from can no longer be found.
-shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
-shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
-The folder you are executing pip from can no longer be found.
+📦 Installing required libraries...
 📥 Starting Ollama...
-shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
-Hit:1 https://cli.github.com/packages stable InRelease
-Hit:2 https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/ InRelease
+Hit:1 https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/ InRelease
+Get:2 https://cli.github.com/packages stable InRelease [3,917 B]
 Hit:3 http://security.ubuntu.com/ubuntu jammy-security InRelease
 Hit:4 http://archive.ubuntu.com/ubuntu jammy InRelease
 Hit:5 https://r2u.stat.illinois.edu/ubuntu jammy InRelease
 Hit:6 http://archive.ubuntu.com/ubuntu jammy-updates InRelease
-Hit:7 https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu jammy InRelease
-Hit:8 http://archive.ubuntu.com/ubuntu jammy-backports InRelease
+Hit:7 http://archive.ubuntu.com/ubuntu jammy-backports InRelease
+Hit:8 https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu jammy InRelease
 Hit:9 https://ppa.launchpadcontent.net/ubuntugis/ppa/ubuntu jammy InRelease
+Fetched 3,917 B in 1s (3,685 B/s)
 Reading package lists... Done
 W: Skipping acquire of configured file 'main/source/Sources' as repository 'https://r2u.stat.illinois.edu/ubuntu jammy InRelease' does not seem to provide it (sources.list entry misspelt?)
 Reading package lists... Done
@@ -30,8 +26,6 @@ Building dependency tree... Done
 Reading state information... Done
 zstd is already the newest version (1.4.8+dfsg-3build1).
 0 upgraded, 0 newly installed, 0 to remove and 29 not upgraded.
-shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
-sh: 0: getcwd() failed: No such file or directory
 >>> Cleaning up old version at /usr/local/lib/ollama
 >>> Installing ollama to /usr/local
 >>> Downloading ollama-linux-amd64.tar.zst
@@ -43,19 +37,37 @@ WARNING: systemd is not running
 WARNING: Unable to detect NVIDIA/AMD GPU. Install lspci or lshw to automatically detect and install GPU dependencies.
 >>> The Ollama API is now available at 127.0.0.1:11434.
 >>> Install complete. Run "ollama" from the command line.
-shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
 
-✅ Environment Ready!
+
+✅ Environment is perfectly set up and synchronized with GitHub!
+⚖️ Loading Legal Dataset (BillSum)...
+⚠️ Dataset load error: Dataset 'fieri/billsum' doesn't exist on the Hub or cannot be accessed.. Using fallback corpus.
+🔍 Progress: 0 documents already processed. Skipping to next...
+⚠️ Error processing doc 0: llama-server process has terminated: error: cannot get current path: No such file or directory: error: cannot get current path: No such file or directory (status code: 500). Skipping.
+⚠️ Error processing doc 1: llama-server process has terminated: error: cannot get current path: No such file or directory: error: cannot get current path: No such file or directory (status code: 500). Skipping.
+⚠️ Error processing doc 2: llama-server process has terminated: error: cannot get current path: No such file or directory: error: cannot get current path: No such file or directory (status code: 500). Skipping.
+⚠️ Error processing doc 3: llama-server process has terminated: error: cannot get current path: No such file or directory: error: cannot get current path: No such file or directory (status code: 500). Skipping.
+⚠️ Error processing doc 4: llama-server process has terminated: error: cannot get current path: No such file or directory: error: cannot get current path: No such file or directory (status code: 500). Skipping.
+⚠️ Error processing doc 5: llama-server process has terminated: error: cannot get current path: No such file or directory: error: cannot get current path: No such file or directory (status code: 500). Skipping.
+⚠️ Error processing doc 6: llama-server process has terminated: error: cannot get current path: No such file or directory: error: cannot get current path: No such file or directory (status code: 500). Skipping.
+⚠️ Error processing doc 7: llama-server process has terminated: error: cannot get current path: No such file or directory: error: cannot get current path: No such file or directory (status code: 500). Skipping.
+⚠️ Error processing doc 8: llama-server process has terminated: error: cannot get current path: No such file or directory: error: cannot get current path: No such file or directory (status code: 500). Skipping.
+⚠️ Error processing doc 9: llama-server process has terminated: error: cannot get current path: No such file or directory: error: cannot get current path: No such file or directory (status code: 500). Skipping.
+
+🔗 Syncing all milestones to Neo4j persistence layer...
+❌ No triples available to sync. Please run extraction first.
+/tmp/ipykernel_344/2946878443.py:112: DeprecationWarning: `langchain-community` is being sunset and is no longer actively maintained. See https://github.com/langchain-ai/langchain-community/issues/674 for details and migration guidance toward standalone integration packages.
+  from langchain_community.graphs import Neo4jGraph
 ---------------------------------------------------------------------------
 ModuleNotFoundError                       Traceback (most recent call last)
-/tmp/ipykernel_344/1564470443.py in <cell line: 0>()
-     40 # @title Execution: Multi-Agent Extraction & Neo4j Sync { vertical-output: true }
-     41 from src.agents.graph import create_agentic_workflow
----> 42 from src.graph.milestone import MilestoneManager
-     43 from src.graph.neo4j_manager import Neo4jManager
-     44 from langchain_ollama import ChatOllama
+/tmp/ipykernel_344/2946878443.py in <cell line: 0>()
+    111 # @title Query: Speak to your Knowledge Graph { vertical-output: true }
+    112 from langchain_community.graphs import Neo4jGraph
+--> 113 from langchain.chains import GraphCypherQAChain
+    114 
+    115 # Connect and Query
 
-ModuleNotFoundError: No module named 'src.graph'
+ModuleNotFoundError: No module named 'langchain.chains'
 
 ---------------------------------------------------------------------------
 NOTE: If your import is failing due to a missing package, you can
