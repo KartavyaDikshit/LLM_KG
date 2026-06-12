@@ -117,8 +117,9 @@ def extractor_node(state: AgentState, config=None):
         def extract_json_data(text):
             # 1. Try finding by markdown blocks first
             blocks = re.findall(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
-            # 2. If no blocks, use the whole text (handles cases where LLM omits markdown)
-            candidates = blocks if blocks else [text]
+            
+            # 2. Try parsing candidates (blocks first, then whole text)
+            candidates = blocks + [text]
             
             for raw in candidates:
                 # Find outermost braces/brackets
@@ -154,11 +155,17 @@ def extractor_node(state: AgentState, config=None):
             result_list = data.get('triples', []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
             for t in result_list:
                 if isinstance(t, dict):
+                    # Ensure values are strings and handle None
+                    s = str(t.get('subject') or 'Unknown')
+                    p = str(t.get('predicate') or 'RELATED_TO')
+                    o = str(t.get('obj') or 'Unknown')
+                    c = t.get('confidence')
+                    
                     triples.append(Triple(
-                        subject=str(t.get('subject', 'Unknown')),
-                        predicate=str(t.get('predicate', 'RELATED_TO')),
-                        obj=str(t.get('obj', 'Unknown')),
-                        confidence=float(t.get('confidence') if t.get('confidence') is not None else 1.0)
+                        subject=s,
+                        predicate=p,
+                        obj=o,
+                        confidence=float(c if c is not None else 1.0)
                     ))
         if not triples:
             print(f"  [Debug] LLM output parsing failed or 0 triples found. Raw output: {content.strip()}")
@@ -247,8 +254,9 @@ def deduplicator_node(state: AgentState, config=None):
         def extract_json_data(text):
             # 1. Try finding by markdown blocks first
             blocks = re.findall(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
-            # 2. If no blocks, use the whole text (handles cases where LLM omits markdown)
-            candidates = blocks if blocks else [text]
+            
+            # 2. Try parsing candidates (blocks first, then whole text)
+            candidates = blocks + [text]
             
             for raw in candidates:
                 # Find outermost braces/brackets
@@ -284,11 +292,17 @@ def deduplicator_node(state: AgentState, config=None):
             result_list = data.get('triples', []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
             for t in result_list:
                 if isinstance(t, dict):
+                    # Ensure values are strings and handle None
+                    s = str(t.get('subject') or 'Unknown')
+                    p = str(t.get('predicate') or 'RELATED_TO')
+                    o = str(t.get('obj') or 'Unknown')
+                    c = t.get('confidence')
+                    
                     cleaned_triples.append(Triple(
-                        subject=str(t.get('subject', 'Unknown')),
-                        predicate=str(t.get('predicate', 'RELATED_TO')),
-                        obj=str(t.get('obj', 'Unknown')),
-                        confidence=float(t.get('confidence') if t.get('confidence') is not None else 1.0)
+                        subject=s,
+                        predicate=p,
+                        obj=o,
+                        confidence=float(c if c is not None else 1.0)
                     ))
         
         return {"extracted_triples": cleaned_triples}
