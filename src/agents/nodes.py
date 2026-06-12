@@ -136,8 +136,9 @@ def extractor_node(state: AgentState, config=None):
         "Constraints:\n"
         "- Entity Types: {entity_types}\n"
         "- Allowed Relations: {allowed_predicates}\n\n"
-        "Format: Output MUST be a JSON object with key 'triples' containing a list of objects with 'subject', 'predicate', 'obj', and 'confidence'.\n"
-        "Feedback to address: {feedback}\n"
+        "CRITICAL: Output MUST be a SINGLE JSON object only. NO PREAMBLE. NO APOLOGIES. NO EXPLANATIONS.\n"
+        "Format: {{'triples': [{{'subject': '...', 'predicate': '...', 'obj': '...', 'confidence': 1.0}}]}}\n"
+        "Feedback to incorporate: {feedback}\n"
     )
     
     try:
