@@ -43,21 +43,15 @@ NEO4J_USER = "37432bb6"
 NEO4J_PASSWORD = "mhsAd-D0AxO3eCWnoL5g1cH6jFEjDIxkkntomwHgWU8"
 
 # 6. Setup Ollama (Local LLM Engine)
-print("📥 Starting Ollama...")
+print("📥 Starting Ollama Server...")
 os.system("pkill -9 ollama || true")
 time.sleep(2)
 !sudo apt-get update && sudo apt-get install -y zstd --quiet
 !curl -fsSL https://ollama.com/install.sh | sh
 subprocess.Popen(["ollama", "serve"], cwd="/", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-time.sleep(15) # Wait for server to start
+time.sleep(10) # Wait for server to start
 
-# Pull ALL models for benchmarking
-models_to_pull = ["llama3", "mistral", "gemma2"]
-for m in models_to_pull:
-    print(f"📥 Pulling {m}...")
-    !ollama pull {m}
-
-print("\n✅ Environment is perfectly set up with 3 models ready for benchmarking!")
+print("\n✅ Setup complete! Proceed to Benchmark.")
 ```
 
 ## 2. Multi-Model Benchmark (Legal & Medical)
@@ -72,6 +66,12 @@ from langchain_ollama import ChatOllama
 from datasets import load_dataset
 import networkx as nx
 
+# --- CONFIGURATION ---
+TEST_MODE = True # @param {type:"boolean"}
+# If TEST_MODE is True, we only process 1 document per domain to save time.
+# Set to False to run the full benchmark.
+# ---------------------
+
 # Initialize
 ms = MilestoneManager()
 neo = Neo4jManager(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
@@ -80,25 +80,25 @@ benchmark_results = []
 
 # 1. LOAD DATASETS
 print("⚖️ Loading Datasets...")
-legal_corpus = []
+limit = 1 if TEST_MODE else 10
+
 try:
     legal_ds = load_dataset("FiscalNote/billsum", split="train")
-    legal_corpus = legal_ds['text'][:3] # Small sample for benchmark speed
+    legal_corpus = legal_ds['text'][:limit]
 except:
-    legal_corpus = ["Company A agrees to pay Company B $5000 for consulting."] * 3
+    legal_corpus = ["Company A agrees to pay Company B $5000."] * limit
 
-medical_corpus = [
-    "Patient diagnosed with Type 2 Diabetes, prescribed Metformin 500mg.",
-    "Acute Respiratory Distress Syndrome secondary to viral pneumonia.",
-    "Subject has history of Stage IV Melanoma. Undergoing immunotherapy."
-]
+medical_corpus = ["Patient diagnosed with Type 2 Diabetes, prescribed Metformin."] * limit
 
 # 2. RUN BENCHMARK
 test_models = ["llama3", "mistral", "gemma2"]
 domains = [("legal", legal_corpus), ("medical", medical_corpus)]
 
 for model_name in test_models:
-    print(f"\n🚀 Benchmarking Model: {model_name.upper()}")
+    print(f"\n🚀 Checking Model: {model_name.upper()}")
+    # Ensure model is pulled (instant if already exists)
+    !ollama pull {model_name}
+    
     llm = ChatOllama(model=model_name, temperature=0)
     
     for domain, corpus in domains:
@@ -114,7 +114,7 @@ for model_name in test_models:
                 )
                 triples = res.get("extracted_triples", [])
                 domain_triples += len(triples)
-                # Save only Llama3 to Neo4j to keep graph clean
+                # Save only Llama3 results to keep graph clean
                 if model_name == "llama3":
                     ms.save(f"{model_name}_{domain}_{i}", triples)
             except Exception as e:
@@ -122,9 +122,7 @@ for model_name in test_models:
         
         elapsed = time.time() - start_time
         benchmark_results.append({
-            "Model": model_name,
-            "Domain": domain,
-            "Triples": domain_triples,
+            "Model": model_name, "Domain": domain, "Triples": domain_triples,
             "Avg Time/Doc": f"{elapsed/len(corpus):.1f}s",
             "Efficiency": f"{domain_triples/elapsed:.2f} T/s"
         })
